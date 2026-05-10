@@ -77,20 +77,36 @@
             </div>
         </header>
 
-        <img id="readCover" src="" class="w-full h-auto max-h-[500px] rounded-2xl mb-12 shadow-sm object-cover hidden bg-slate-100">
+        <div id="sliderMainContainer" class="mb-12 hidden">
+            <div class="relative w-full h-[300px] md:h-[500px] rounded-2xl overflow-hidden shadow-sm bg-slate-100 group">
+                <div id="sliderWrapper" class="flex h-full transition-transform duration-500 ease-in-out">
+                    </div>
+                
+                <button onclick="prevSlide()" id="btnPrev" class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white text-slate-800 rounded-full flex items-center justify-center shadow-md transition-all opacity-0 group-hover:opacity-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                </button>
+                <button onclick="nextSlide()" id="btnNext" class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white text-slate-800 rounded-full flex items-center justify-center shadow-md transition-all opacity-0 group-hover:opacity-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                </button>
+                
+                <div id="sliderIndicators" class="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                </div>
+            </div>
+            <p class="text-right text-sm text-slate-500 italic mt-3 pr-2">📷 Kredit Foto: <span id="readSumberFoto" class="font-medium text-slate-700"></span></p>
+        </div>
 
         <article id="readIsi" class="content-render">
             </article>
 
-        <div id="galeriContainer" class="hidden mt-16 pt-10 border-t border-slate-100">
-            <h3 class="text-xl font-bold text-slate-900 mb-6">Galeri Dokumentasi</h3>
-            <div id="readGaleri" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-        </div>
     </div>
 
     <script>
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4asOMmEvaoL-qfmxuvep7l3Amcv0uL4dCmtXklYMWF-uTlutlZT_9qTrY5hXVM4s-Xw/exec?status=PUBLISHED"; 
         let globalArticles = [];
+
+        // Variabel untuk Slider
+        let currentSlideIndex = 0;
+        let totalSlidesCount = 0;
 
         async function loadPublishedArticles() {
             try {
@@ -118,7 +134,6 @@
                             }
                         }
 
-                        // Format Tanggal lebih elegan
                         const dateObj = new Date(art.tanggal);
                         const options = { year: 'numeric', month: 'long', day: 'numeric' };
                         const formattedDate = dateObj.toLocaleDateString('id-ID', options) !== "Invalid Date" ? dateObj.toLocaleDateString('id-ID', options) : art.tanggal.split("T")[0];
@@ -171,29 +186,47 @@
             document.getElementById('readTanggal').innerText = formattedDate;
             document.getElementById('readIsi').innerHTML = art.isi;
 
-            const cover = document.getElementById('readCover');
-            const galeri = document.getElementById('readGaleri');
-            const galeriContainer = document.getElementById('galeriContainer');
-            
-            cover.classList.add('hidden');
-            galeriContainer.classList.add('hidden');
-            galeri.innerHTML = '';
+            // Logika Sumber Foto
+            const sumberFotoText = art.sumberFoto && art.sumberFoto.trim() !== "" 
+                                    ? art.sumberFoto 
+                                    : "Dokumen Pribadi (" + art.penulis + ")";
+            document.getElementById('readSumberFoto').innerText = sumberFotoText;
 
-            if(art.foto.length > 0) {
+            // Logika Membangun Slider
+            const sliderContainer = document.getElementById('sliderMainContainer');
+            const sliderWrapper = document.getElementById('sliderWrapper');
+            const sliderIndicators = document.getElementById('sliderIndicators');
+            
+            sliderWrapper.innerHTML = '';
+            sliderIndicators.innerHTML = '';
+
+            if(art.foto && art.foto.length > 0) {
+                sliderContainer.classList.remove('hidden');
+                
                 art.foto.forEach((link, index) => {
+                    let imgUrl = link;
                     let fileIdMatch = link.match(/\/file\/d\/(.+?)\//);
                     if (fileIdMatch && fileIdMatch[1]) {
-                        let imgUrl = `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w1200`;
-                        
-                        if (index === 0) {
-                            cover.src = imgUrl;
-                            cover.classList.remove('hidden');
-                        } else {
-                            galeriContainer.classList.remove('hidden');
-                            galeri.innerHTML += `<img src="${imgUrl}" class="w-full h-48 md:h-64 object-cover rounded-xl shadow-sm border border-slate-100 hover:opacity-90 transition-opacity">`;
-                        }
+                        // Resolusi gambar dinaikkan (w1200) agar tajam di slider
+                        imgUrl = `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w1200`;
                     }
+                    
+                    // Buat Slide Gambar
+                    const slide = document.createElement('div');
+                    slide.className = "min-w-full h-full flex-shrink-0";
+                    slide.innerHTML = `<img src="${imgUrl}" class="w-full h-full object-cover">`;
+                    sliderWrapper.appendChild(slide);
+
+                    // Buat Dot Indikator
+                    const dot = document.createElement('button');
+                    dot.className = `slider-dot h-2 rounded-full transition-all duration-300 shadow-sm ${index === 0 ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'}`;
+                    dot.onclick = () => goToSlide(index);
+                    sliderIndicators.appendChild(dot);
                 });
+
+                initSlider(art.foto.length);
+            } else {
+                sliderContainer.classList.add('hidden');
             }
         }
 
@@ -201,6 +234,57 @@
             document.getElementById('readView').classList.add('hidden');
             document.getElementById('homeView').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- FUNGSI KONTROL SLIDER ---
+        function initSlider(total) {
+            currentSlideIndex = 0;
+            totalSlidesCount = total;
+            updateSliderView();
+        }
+
+        function prevSlide() {
+            if (currentSlideIndex > 0) {
+                currentSlideIndex--;
+                updateSliderView();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlideIndex < totalSlidesCount - 1) {
+                currentSlideIndex++;
+                updateSliderView();
+            }
+        }
+
+        function goToSlide(index) {
+            currentSlideIndex = index;
+            updateSliderView();
+        }
+
+        function updateSliderView() {
+            const wrapper = document.getElementById('sliderWrapper');
+            // Geser posisi X wrapper berdasarkan indeks slide
+            wrapper.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
+            
+            // Sembunyikan tombol Kiri/Kanan jika di ujung batas
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+            
+            btnPrev.style.display = currentSlideIndex === 0 ? 'none' : 'flex';
+            btnNext.style.display = currentSlideIndex === totalSlidesCount - 1 ? 'none' : 'flex';
+
+            // Perbarui visual Titik Indikator
+            const indicators = document.querySelectorAll('.slider-dot');
+            indicators.forEach((dot, index) => {
+                if (index === currentSlideIndex) {
+                    dot.classList.remove('bg-white/50', 'w-2');
+                    dot.classList.add('bg-white', 'w-6');
+                } else {
+                    dot.classList.remove('bg-white', 'w-6');
+                    dot.classList.add('bg-white/50', 'w-2');
+                }
+            });
         }
 
         window.onload = loadPublishedArticles;
