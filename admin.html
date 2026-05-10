@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruang Redaksi - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
+        /* Trik agar kode HTML dari Google Sheets tampil menjadi teks rapi (Quill style) */
+        .content-render h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; }
+        .content-render h2 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; }
+        .content-render p { margin-bottom: 1em; line-height: 1.8; }
+        .content-render ul { list-style-type: disc; margin-left: 20px; margin-bottom: 1em; }
+        .content-render ol { list-style-type: decimal; margin-left: 20px; margin-bottom: 1em; }
+        .content-render blockquote { border-left: 4px solid #cbd5e1; padding-left: 16px; font-style: italic; color: #64748b; }
+        .content-render img { max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-black text-slate-800">Ruang <span class="text-indigo-600">Redaksi</span></h1>
+                <p class="text-slate-500 font-medium">Panel kurasi naskah (Hanya untuk Admin)</p>
+            </div>
+            <button onclick="loadData()" class="bg-indigo-100 text-indigo-700 font-bold px-4 py-2 rounded-xl hover:bg-indigo-200 transition-colors">
+                🔄 Refresh Data
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 h-fit max-h-[800px] overflow-y-auto">
+                <h2 class="font-bold text-lg text-slate-700 mb-4 border-b pb-2">Menunggu Review ⏳</h2>
+                <div id="loadingList" class="text-slate-500 italic text-sm text-center py-4">Memuat data dari database...</div>
+                <div id="articleList" class="space-y-3">
+                    </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200 hidden" id="reviewArea">
+                <div class="mb-6 border-b pb-6">
+                    <span id="revKategori" class="bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full mb-3 inline-block">Kategori</span>
+                    <h1 id="revJudul" class="text-3xl font-black text-slate-900 mb-2">Judul Artikel</h1>
+                    <p class="text-slate-500 text-sm font-medium">Oleh: <span id="revPenulis" class="text-slate-800 font-bold">Nama</span> | <span id="revTanggal">Tanggal</span></p>
+                </div>
+
+                <div id="revFotoArea" class="flex gap-4 overflow-x-auto mb-8 pb-2 hidden">
+                    </div>
+
+                <div id="revIsi" class="content-render text-slate-800 text-lg mb-10 border p-6 rounded-2xl bg-slate-50">
+                    Isi konten...
+                </div>
+
+                <div class="flex gap-4 border-t pt-6">
+                    <button id="btnSetujui" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all">
+                        ✅ SETUJUI & PUBLISH
+                    </button>
+                    <button id="btnTolak" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all">
+                        ❌ TOLAK NASKAH
+                    </button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 flex items-center justify-center bg-white p-10 rounded-3xl shadow-sm border border-slate-200" id="emptyArea">
+                <div class="text-center">
+                    <div class="text-6xl mb-4">📖</div>
+                    <h3 class="text-xl font-bold text-slate-700">Pilih naskah di sebelah kiri</h3>
+                    <p class="text-slate-500">Naskah yang di-klik akan muncul di area ini untuk direview.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // MASUKKAN URL GOOGLE APPS SCRIPT YANG BARU DI SINI
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby75-HxpvH_JmGnSaSG4qBCeZgWWxdoCLj_S8Q9w2aOhClwf6pPgmVGjfg6Q5LNqp5agQ/exec"; 
+        let globalArticles = [];
+        let selectedArticleId = null;
+
+        // Fungsi Tarik Data
+        async function loadData() {
+            document.getElementById('loadingList').style.display = 'block';
+            document.getElementById('articleList').innerHTML = '';
+            
+            try {
+                // Request GET untuk mengambil data JSON
+                const response = await fetch(GAS_WEB_APP_URL);
+                const result = await response.json();
+                
+                document.getElementById('loadingList').style.display = 'none';
+
+                if(result.result === "success") {
+                    globalArticles = result.data;
+                    if(globalArticles.length === 0) {
+                        document.getElementById('articleList').innerHTML = '<p class="text-sm text-slate-500 text-center py-4">Semua naskah sudah direview. Bersih!</p>';
+                        return;
+                    }
+
+                    // Render List
+                    globalArticles.forEach(art => {
+                        const div = document.createElement('div');
+                        div.className = "p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 cursor-pointer transition-colors";
+                        div.onclick = () => openArticle(art.id);
+                        div.innerHTML = `
+                            <p class="text-[10px] font-bold text-indigo-600 mb-1 uppercase">${art.kategori}</p>
+                            <h3 class="font-bold text-slate-800 line-clamp-2">${art.judul}</h3>
+                            <p class="text-xs text-slate-500 mt-2">${art.penulis}</p>
+                        `;
+                        document.getElementById('articleList').appendChild(div);
+                    });
+                }
+            } catch (err) {
+                document.getElementById('loadingList').innerHTML = '<span class="text-red-500">Gagal memuat data.</span>';
+            }
+        }
+
+        // Fungsi Buka Artikel
+        function openArticle(id) {
+            const art = globalArticles.find(a => a.id === id);
+            if(!art) return;
+            selectedArticleId = id;
+
+            document.getElementById('emptyArea').classList.add('hidden');
+            document.getElementById('reviewArea').classList.remove('hidden');
+
+            document.getElementById('revKategori').innerText = art.kategori;
+            document.getElementById('revJudul').innerText = art.judul;
+            document.getElementById('revPenulis').innerText = art.penulis + " (" + art.email + ")";
+            document.getElementById('revTanggal').innerText = art.tanggal;
+            
+            // JENG JENG! Kode HTML otomatis diterjemahkan jadi teks rapi di baris ini
+            document.getElementById('revIsi').innerHTML = art.isi;
+
+            // Render Foto Utama (Jika ada)
+            const fotoArea = document.getElementById('revFotoArea');
+            fotoArea.innerHTML = '';
+            if(art.foto.length > 0) {
+                fotoArea.classList.remove('hidden');
+                art.foto.forEach(link => {
+                    fotoArea.innerHTML += `<img src="${link}" class="h-32 w-48 object-cover rounded-xl border-2 border-slate-200 flex-shrink-0">`;
+                });
+            } else {
+                fotoArea.classList.add('hidden');
+            }
+        }
+
+        // Fungsi Update Status (Setujui / Tolak)
+        async function updateStatus(newStatus) {
+            if(!selectedArticleId) return;
+            if(!confirm(`Yakin ingin mengubah naskah ini menjadi: ${newStatus}?`)) return;
+
+            const btnS = document.getElementById('btnSetujui');
+            const btnT = document.getElementById('btnTolak');
+            btnS.disabled = true; btnT.disabled = true;
+
+            try {
+                // Request POST untuk mengubah status
+                await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Pakai no-cors seperti sebelumnya
+                    body: JSON.stringify({
+                        action: "updateStatus",
+                        articleId: selectedArticleId,
+                        status: newStatus
+                    })
+                });
+
+                alert("✅ Status berhasil diubah!");
+                document.getElementById('emptyArea').classList.remove('hidden');
+                document.getElementById('reviewArea').classList.add('hidden');
+                loadData(); // Refresh list
+
+            } catch (err) {
+                alert("❌ Terjadi kesalahan saat update status.");
+            } finally {
+                btnS.disabled = false; btnT.disabled = false;
+            }
+        }
+
+        // Event Listener Tombol
+        document.getElementById('btnSetujui').addEventListener('click', () => updateStatus('PUBLISHED'));
+        document.getElementById('btnTolak').addEventListener('click', () => updateStatus('REJECTED'));
+
+        // Load data saat halaman dibuka
+        window.onload = loadData;
+    </script>
+</body>
+</html>
