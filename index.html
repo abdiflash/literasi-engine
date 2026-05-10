@@ -61,16 +61,15 @@
             </div>
         </div>
 
-        <img id="readCover" src="" class="w-full h-auto rounded-2xl mb-10 shadow-md object-cover hidden">
+        <img id="readCover" src="" class="w-full h-auto rounded-2xl mb-10 shadow-md object-cover hidden bg-slate-100">
 
         <div id="readIsi" class="content-render text-lg text-slate-700">
             </div>
 
-        <div id="readGaleri" class="mt-10 grid grid-cols-2 gap-4 hidden"></div>
+        <div id="readGaleri" class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4 hidden"></div>
     </div>
 
     <script>
-        // URL GAS ditambah parameter ?status=PUBLISHED khusus untuk halaman depan
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4asOMmEvaoL-qfmxuvep7l3Amcv0uL4dCmtXklYMWF-uTlutlZT_9qTrY5hXVM4s-Xw/exec?status=PUBLISHED"; 
         let globalArticles = [];
 
@@ -82,7 +81,7 @@
                 document.getElementById('loading').style.display = 'none';
 
                 if(result.result === "success") {
-                    globalArticles = result.data.reverse(); // Reverse agar naskah terbaru di atas
+                    globalArticles = result.data.reverse(); 
                     const grid = document.getElementById('articleGrid');
                     grid.classList.remove('hidden');
 
@@ -92,8 +91,7 @@
                     }
 
                     globalArticles.forEach(art => {
-                        // Setup Thumbnail dari link Google Drive foto pertama
-                        let thumbUrl = "https://images.unsplash.com/photo-1455390582262-044cdead27d8?w=800&q=80"; // Cover default
+                        let thumbUrl = "https://images.unsplash.com/photo-1455390582262-044cdead27d8?w=800&q=80"; 
                         if(art.foto.length > 0) {
                             let fileIdMatch = art.foto[0].match(/\/file\/d\/(.+?)\//);
                             if (fileIdMatch && fileIdMatch[1]) {
@@ -101,7 +99,6 @@
                             }
                         }
 
-                        // Buat Kartu
                         const card = document.createElement('div');
                         card.className = "bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl transition-all cursor-pointer group flex flex-col";
                         card.onclick = () => openReadView(art.id);
@@ -132,20 +129,17 @@
             const art = globalArticles.find(a => a.id === id);
             if(!art) return;
 
-            // Sembunyikan Home, Tampilkan Read View
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('readView').classList.remove('hidden');
             window.scrollTo(0, 0);
 
-            // Masukkan data
             document.getElementById('readKategori').innerText = art.kategori;
             document.getElementById('readJudul').innerText = art.judul;
             document.getElementById('readPenulis').innerText = art.penulis;
-            document.getElementById('readAvatar').innerText = art.penulis.charAt(0);
+            document.getElementById('readAvatar').innerText = art.penulis.charAt(0).toUpperCase();
             document.getElementById('readTanggal').innerText = art.tanggal;
             document.getElementById('readIsi').innerHTML = art.isi;
 
-            // Cover dan Galeri
             const cover = document.getElementById('readCover');
             const galeri = document.getElementById('readGaleri');
             cover.classList.add('hidden');
@@ -156,14 +150,15 @@
                 art.foto.forEach((link, index) => {
                     let fileIdMatch = link.match(/\/file\/d\/(.+?)\//);
                     if (fileIdMatch && fileIdMatch[1]) {
-                        let imgUrl = `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+                        // PERBAIKAN: Menggunakan endpoint /thumbnail dengan sz=w1000 agar gambarnya besar dan tajam
+                        let imgUrl = `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w1000`;
                         
                         if (index === 0) {
                             cover.src = imgUrl;
                             cover.classList.remove('hidden');
                         } else {
                             galeri.classList.remove('hidden');
-                            galeri.innerHTML += `<img src="${imgUrl}" class="w-full h-48 object-cover rounded-xl shadow-sm border border-slate-200">`;
+                            galeri.innerHTML += `<img src="${imgUrl}" class="w-full h-48 md:h-64 object-cover rounded-xl shadow-sm border border-slate-200 bg-slate-100">`;
                         }
                     }
                 });
@@ -176,7 +171,6 @@
             window.scrollTo(0, 0);
         }
 
-        // Jalankan saat pertama kali dibuka
         window.onload = loadPublishedArticles;
     </script>
 </body>
