@@ -5,70 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Core Engine - Portal Literasi</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        
+        /* Standarisasi Font */
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .ql-editor { min-height: 350px; font-size: 16px; line-height: 1.8; }
-        .ql-container { border-radius: 0 0 16px 16px !important; border: 1px solid #e2e8f0 !important; }
-        .ql-toolbar { border-radius: 16px 16px 0 0 !important; background: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
         
+        /* Kustomisasi Quill Editor agar serasi dengan form */
+        .ql-editor { min-height: 350px; font-size: 16px; line-height: 1.8; color: #1e293b; }
+        .ql-editor::before { font-style: normal !important; color: #94a3b8 !important; }
+        .ql-container { border-radius: 0 0 16px 16px !important; border: 1px solid #e2e8f0 !important; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .ql-toolbar { border-radius: 16px 16px 0 0 !important; background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-bottom: none !important; padding: 12px !important; }
+        
+        /* Grid untuk Preview Foto */
         .image-preview-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
             gap: 12px; 
-            margin-top: 15px; 
+            margin-top: 16px; 
         }
         .preview-item { 
             width: 100%; 
             height: 100px; 
             border-radius: 12px; 
             object-fit: cover; 
-            border: 3px solid #fff;
+            border: 2px solid #fff;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
+        
+        /* Animasi Loading */
         .loading-spinner {
             border: 3px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             border-top: 3px solid #fff;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-50 p-4 md:p-10">
+<body class="bg-slate-50 p-4 md:p-8 antialiased">
 
-    <div class="max-w-4xl mx-auto bg-white p-6 md:p-12 rounded-[2.5rem] shadow-2xl border border-slate-100">
-        <div class="border-b-2 border-slate-50 pb-8 mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-[2rem] shadow-xl border border-slate-100">
+        <div class="border-b border-slate-100 pb-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h1 class="text-4xl font-black text-slate-900 tracking-tight italic">CORE <span class="text-blue-600">ENGINE</span></h1>
-                <p class="text-slate-500 font-medium mt-1">Dashboard Penulis Komunitas — Status: <span class="text-orange-500 font-bold">Review Mode</span></p>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight italic">CORE <span class="text-blue-600">ENGINE</span></h1>
+                <p class="text-slate-500 font-medium mt-1 text-sm md:text-base">Dashboard Penulis Komunitas — Status: <span class="text-orange-500 font-bold">Review Mode</span></p>
             </div>
-            <div class="bg-blue-50 px-4 py-2 rounded-2xl">
-                <p class="text-blue-700 text-xs font-black uppercase tracking-widest text-center">Version 2.1 Multi-Photo</p>
+            <div class="bg-blue-50 border border-blue-100 px-4 py-2 rounded-xl">
+                <p class="text-blue-700 text-sm font-bold tracking-wide text-center">Versi 2.1 Multi-Photo</p>
             </div>
         </div>
 
-        <form id="engineForm" class="space-y-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form id="engineForm" class="space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">Identitas Penulis</label>
-                    <input type="text" id="penulis" required class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400" placeholder="Nama Lengkap Anda">
+                    <label class="block text-base font-semibold text-slate-700 mb-2">Nama Lengkap Penulis</label>
+                    <input type="text" id="penulis" required class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-800" placeholder="Masukkan nama lengkap Anda">
                 </div>
                 <div>
-                    <label class="block text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">Email Korespondensi</label>
-                    <input type="email" id="email" required class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400" placeholder="email@sekolah.sch.id">
+                    <label class="block text-base font-semibold text-slate-700 mb-2">Email Korespondensi</label>
+                    <input type="email" id="email" required class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-800" placeholder="email@sekolah.sch.id">
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="md:col-span-1">
-                    <label class="block text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">Kategori Konten</label>
-                    <select id="kategori" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none cursor-pointer appearance-none font-semibold text-slate-700">
+                    <label class="block text-base font-semibold text-slate-700 mb-2">Kategori Konten</label>
+                    <select id="kategori" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer font-medium text-slate-700">
                         <option value="Cerpen">📖 Cerpen</option>
                         <option value="Puisi">✍️ Puisi</option>
                         <option value="Opini">💡 Opini</option>
@@ -79,52 +88,53 @@
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">Judul Artikel</label>
-                    <input type="text" id="judul" required class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all font-bold text-xl text-slate-800" placeholder="Tuliskan judul yang provokatif & menarik...">
+                    <label class="block text-base font-semibold text-slate-700 mb-2">Judul Artikel</label>
+                    <input type="text" id="judul" required class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-lg text-slate-800 placeholder:text-slate-400 placeholder:font-normal" placeholder="Tuliskan judul yang menarik di sini...">
                 </div>
             </div>
 
-            <div class="bg-gradient-to-br from-blue-600 to-blue-800 p-8 rounded-[2rem] text-white shadow-lg shadow-blue-200">
+            <div class="bg-blue-600 p-6 md:p-8 rounded-[1.5rem] text-white shadow-md">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <label class="block text-sm font-bold mb-3 opacity-90 uppercase">🖼️ Foto Utama (Maks. 5 Foto)</label>
-                        <input type="file" id="imageFiles" accept="image/*" multiple class="block w-full text-sm text-blue-100 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-white file:text-blue-700 hover:file:bg-blue-50 cursor-pointer">
+                        <label class="block text-base font-semibold mb-3">🖼️ Foto Utama (Maksimal 5 Foto)</label>
+                        <input type="file" id="imageFiles" accept="image/*" multiple class="block w-full text-sm text-blue-100 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-white file:text-blue-700 hover:file:bg-blue-50 cursor-pointer transition-colors">
                         <div id="imagePreview" class="image-preview-grid"></div>
-                        <p class="text-[10px] mt-3 text-blue-200 italic">* Foto ini akan muncul sebagai slider/thumbnail di halaman utama.</p>
+                        <p class="text-xs mt-3 text-blue-200 font-medium">* Foto-foto ini akan ditampilkan sebagai pratinjau di halaman utama web.</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold mb-3 opacity-90 uppercase">🎥 Integrasi Video YouTube</label>
-                        <input type="url" id="youtube" class="w-full p-4 bg-blue-700/50 border border-blue-400/30 rounded-2xl focus:ring-2 focus:ring-white outline-none placeholder:text-blue-300 text-white" placeholder="https://youtube.com/watch?v=...">
+                        <label class="block text-base font-semibold mb-3">🎥 Link Video YouTube (Opsional)</label>
+                        <input type="url" id="youtube" class="w-full p-4 bg-blue-700 border border-blue-500 rounded-2xl focus:ring-2 focus:ring-white outline-none placeholder:text-blue-300 text-white transition-all" placeholder="https://youtube.com/watch?v=...">
                     </div>
                 </div>
             </div>
 
             <div>
-                <label class="block text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">Isi Tulisan & Media Dalam Konten</label>
+                <label class="block text-base font-semibold text-slate-700 mb-2">Isi Tulisan</label>
                 <div id="editor" class="bg-white"></div>
-                <div class="flex items-center gap-2 mt-3 text-slate-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="flex items-start gap-2 mt-3 text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p class="text-[11px] italic">Gunakan ikon gambar di toolbar editor jika ingin menyisipkan foto di antara paragraf.</p>
+                    <p class="text-sm font-medium">Tips: Anda dapat menggunakan ikon gambar pada toolbar di atas untuk menyisipkan foto langsung di tengah-tengah paragraf.</p>
                 </div>
             </div>
 
-            <div class="pt-6 border-t border-slate-100">
-                <button type="submit" id="submitBtn" class="w-full bg-slate-900 hover:bg-black text-white font-black py-6 px-8 rounded-3xl transition-all transform hover:-translate-y-1 active:scale-[0.98] shadow-2xl flex justify-center items-center gap-4 text-xl tracking-wide uppercase">
+            <div class="pt-4">
+                <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 px-8 rounded-2xl transition-all transform hover:-translate-y-0.5 active:scale-[0.98] shadow-lg shadow-blue-200 flex justify-center items-center gap-3 text-lg">
                     <span id="btnIcon">🚀</span>
                     <span id="btnText">Kirim Naskah Sekarang</span>
                 </button>
-                <div id="statusMsg" class="mt-6 text-center p-5 rounded-2xl hidden font-bold text-sm"></div>
+                <div id="statusMsg" class="mt-4 text-center p-4 rounded-xl hidden font-bold text-base"></div>
             </div>
         </form>
     </div>
 
     <script>
-        // 1. MASUKKAN URL GOOGLE APPS SCRIPT ANDA
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwyEZxncoGnMjCOWqkKo-yCWaJs4Rx7sirj1HFnxVa3q_sBthTxzZh4rXs0l0Mxf3RA1A/exec";
+        // --- KONFIGURASI ---
+        // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI BAWAH INI
+        const GAS_WEB_APP_URL = "MASUKKAN_URL_WEB_APP_ANDA_DISINI";
 
-        // 2. Inisialisasi Quill Editor dengan Tool Lengkap
+        // Inisialisasi Quill Editor
         const quill = new Quill('#editor', {
             theme: 'snow',
             placeholder: 'Tuangkan ide brilian Anda di sini...',
@@ -140,11 +150,11 @@
             }
         });
 
-        // 3. Logic: Preview Multi-Photo
+        // Logika Pratinjau Foto
         document.getElementById('imageFiles').addEventListener('change', function(e) {
             const previewContainer = document.getElementById('imagePreview');
             previewContainer.innerHTML = '';
-            const files = Array.from(e.target.files).slice(0, 5); // Limit 5
+            const files = Array.from(e.target.files).slice(0, 5); // Batasi maksimal 5 foto
             
             files.forEach(file => {
                 const reader = new FileReader();
@@ -158,7 +168,7 @@
             });
         });
 
-        // 4. Helper: Base64 Converter
+        // Fungsi Konversi File ke Base64
         function getBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -168,7 +178,7 @@
             });
         }
 
-        // 5. Submit Process
+        // Logika Pengiriman Form
         document.getElementById('engineForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -176,19 +186,18 @@
             const btnIcon = document.getElementById('btnIcon');
             const statusMsg = document.getElementById('statusMsg');
 
-            if(GAS_WEB_APP_URL.includes("MASUKKAN_URL")) {
-                alert("Sistem belum siap: URL Apps Script belum dipasang!");
+            if(GAS_WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbwyEZxncoGnMjCOWqkKo-yCWaJs4Rx7sirj1HFnxVa3q_sBthTxzZh4rXs0l0Mxf3RA1A/exec")) {
+                alert("Sistem belum siap: URL Web App Google Apps Script belum dipasang!");
                 return;
             }
 
-            // UI: Loading State
+            // Ubah tampilan tombol saat loading
             btn.disabled = true;
             btnText.innerText = "SEDANG MENGIRIM DATA...";
             btnIcon.innerHTML = `<div class="loading-spinner"></div>`;
             statusMsg.classList.add('hidden');
 
             try {
-                // Collect Multi-Photos
                 const fileInput = document.getElementById('imageFiles');
                 const imageArray = [];
                 const files = Array.from(fileInput.files).slice(0, 5);
@@ -208,26 +217,28 @@
                     imageFiles: imageArray
                 };
 
-                // Kirim ke Google Apps Script
+                // Proses pengiriman ke Google Apps Script
                 await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     body: JSON.stringify(payload)
                 });
 
-                // Success Message
-                statusMsg.innerText = "✅ NASKAH TERKIRIM! Mohon tunggu proses kurasi dari Tim Redaksi/Admin.";
-                statusMsg.className = "mt-6 text-center p-5 rounded-2xl block bg-green-50 text-green-700 border-2 border-green-200 shadow-sm";
+                // Pesan Sukses
+                statusMsg.innerText = "✅ NASKAH TERKIRIM! Naskah Anda berhasil masuk ke database dan menunggu kurasi Admin.";
+                statusMsg.className = "mt-4 text-center p-4 rounded-xl block bg-emerald-50 text-emerald-700 border border-emerald-200";
                 
-                // Reset Form
+                // Bersihkan form setelah sukses
                 document.getElementById('engineForm').reset();
                 document.getElementById('imagePreview').innerHTML = '';
                 quill.setContents([]);
 
             } catch (err) {
-                statusMsg.innerText = "❌ ERROR: " + err.message;
-                statusMsg.className = "mt-6 text-center p-5 rounded-2xl block bg-red-50 text-red-700 border-2 border-red-200 shadow-sm";
+                // Pesan Error
+                statusMsg.innerText = "❌ GAGAL MENGIRIM: " + err.message;
+                statusMsg.className = "mt-4 text-center p-4 rounded-xl block bg-red-50 text-red-700 border border-red-200";
             } finally {
+                // Kembalikan tampilan tombol ke awal
                 btn.disabled = false;
                 btnText.innerText = "Kirim Naskah Sekarang";
                 btnIcon.innerText = "🚀";
