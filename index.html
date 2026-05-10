@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Literasi Komunitas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .content-render h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; }
+        .content-render h2 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; }
+        .content-render p { margin-bottom: 1em; line-height: 1.8; }
+        .content-render ul { list-style-type: disc; margin-left: 20px; margin-bottom: 1em; }
+        .content-render ol { list-style-type: decimal; margin-left: 20px; margin-bottom: 1em; }
+        .content-render blockquote { border-left: 4px solid #cbd5e1; padding-left: 16px; font-style: italic; color: #64748b; }
+        .content-render img { max-width: 100%; height: auto; border-radius: 12px; margin: 15px 0; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="text-2xl font-black text-indigo-600 flex items-center gap-2 cursor-pointer" onclick="backToHome()">
+                📚 Portal Literasi
+            </div>
+            <a href="tulis.html" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-full transition shadow-md text-sm">
+                ✍️ Kirim Naskah
+            </a>
+        </div>
+    </nav>
+
+    <div id="homeView" class="max-w-6xl mx-auto px-4 py-10">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-black mb-4">Eksplorasi Ide & <span class="text-indigo-600">Gagasan</span></h1>
+            <p class="text-slate-500 max-w-2xl mx-auto">Kumpulan karya, opini, dan cerita dari komunitas kita.</p>
+        </div>
+
+        <div id="loading" class="text-center py-20">
+            <div class="animate-spin inline-block w-8 h-8 border-[4px] border-current border-t-transparent text-indigo-600 rounded-full" role="status" aria-label="loading"></div>
+            <p class="mt-3 text-slate-500 font-medium">Memuat artikel terbaru...</p>
+        </div>
+
+        <div id="articleGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 hidden">
+            </div>
+    </div>
+
+    <div id="readView" class="max-w-3xl mx-auto px-4 py-10 hidden">
+        <button onclick="backToHome()" class="text-indigo-600 font-bold mb-8 hover:underline flex items-center gap-2">
+            ⬅ Kembali ke Beranda
+        </button>
+
+        <span id="readKategori" class="bg-orange-100 text-orange-700 text-sm font-bold px-4 py-1 rounded-full mb-4 inline-block">Kategori</span>
+        <h1 id="readJudul" class="text-4xl md:text-5xl font-black text-slate-900 mb-6 leading-tight">Judul Artikel</h1>
+        
+        <div class="flex items-center gap-4 mb-10 pb-6 border-b border-slate-200">
+            <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-xl font-bold text-indigo-600 uppercase" id="readAvatar">A</div>
+            <div>
+                <p class="font-bold text-slate-800" id="readPenulis">Nama Penulis</p>
+                <p class="text-sm text-slate-500" id="readTanggal">Tanggal rilis</p>
+            </div>
+        </div>
+
+        <img id="readCover" src="" class="w-full h-auto rounded-2xl mb-10 shadow-md object-cover hidden">
+
+        <div id="readIsi" class="content-render text-lg text-slate-700">
+            </div>
+
+        <div id="readGaleri" class="mt-10 grid grid-cols-2 gap-4 hidden"></div>
+    </div>
+
+    <script>
+        // URL GAS ditambah parameter ?status=PUBLISHED khusus untuk halaman depan
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4asOMmEvaoL-qfmxuvep7l3Amcv0uL4dCmtXklYMWF-uTlutlZT_9qTrY5hXVM4s-Xw/exec?status=PUBLISHED"; 
+        let globalArticles = [];
+
+        async function loadPublishedArticles() {
+            try {
+                const response = await fetch(GAS_WEB_APP_URL);
+                const result = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+
+                if(result.result === "success") {
+                    globalArticles = result.data.reverse(); // Reverse agar naskah terbaru di atas
+                    const grid = document.getElementById('articleGrid');
+                    grid.classList.remove('hidden');
+
+                    if(globalArticles.length === 0) {
+                        grid.innerHTML = `<div class="col-span-full text-center py-20"><p class="text-xl text-slate-500">Belum ada artikel yang dipublikasikan.</p></div>`;
+                        return;
+                    }
+
+                    globalArticles.forEach(art => {
+                        // Setup Thumbnail dari link Google Drive foto pertama
+                        let thumbUrl = "https://images.unsplash.com/photo-1455390582262-044cdead27d8?w=800&q=80"; // Cover default
+                        if(art.foto.length > 0) {
+                            let fileIdMatch = art.foto[0].match(/\/file\/d\/(.+?)\//);
+                            if (fileIdMatch && fileIdMatch[1]) {
+                                thumbUrl = `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w800`;
+                            }
+                        }
+
+                        // Buat Kartu
+                        const card = document.createElement('div');
+                        card.className = "bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl transition-all cursor-pointer group flex flex-col";
+                        card.onclick = () => openReadView(art.id);
+                        card.innerHTML = `
+                            <div class="h-48 w-full overflow-hidden bg-slate-100 relative">
+                                <img src="${thumbUrl}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-indigo-700 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                                    ${art.kategori}
+                                </div>
+                            </div>
+                            <div class="p-6 flex-1 flex flex-col">
+                                <h3 class="font-black text-xl text-slate-800 mb-3 line-clamp-2 group-hover:text-indigo-600 transition-colors">${art.judul}</h3>
+                                <div class="mt-auto flex items-center justify-between pt-4 border-t border-slate-100">
+                                    <span class="text-sm font-medium text-slate-600 truncate mr-2">${art.penulis}</span>
+                                    <span class="text-xs text-slate-400 whitespace-nowrap">${art.tanggal.split("T")[0]}</span>
+                                </div>
+                            </div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                }
+            } catch (err) {
+                document.getElementById('loading').innerHTML = '<span class="text-red-500 font-bold">Gagal memuat data dari database. Coba muat ulang halaman.</span>';
+            }
+        }
+
+        function openReadView(id) {
+            const art = globalArticles.find(a => a.id === id);
+            if(!art) return;
+
+            // Sembunyikan Home, Tampilkan Read View
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('readView').classList.remove('hidden');
+            window.scrollTo(0, 0);
+
+            // Masukkan data
+            document.getElementById('readKategori').innerText = art.kategori;
+            document.getElementById('readJudul').innerText = art.judul;
+            document.getElementById('readPenulis').innerText = art.penulis;
+            document.getElementById('readAvatar').innerText = art.penulis.charAt(0);
+            document.getElementById('readTanggal').innerText = art.tanggal;
+            document.getElementById('readIsi').innerHTML = art.isi;
+
+            // Cover dan Galeri
+            const cover = document.getElementById('readCover');
+            const galeri = document.getElementById('readGaleri');
+            cover.classList.add('hidden');
+            galeri.classList.add('hidden');
+            galeri.innerHTML = '';
+
+            if(art.foto.length > 0) {
+                art.foto.forEach((link, index) => {
+                    let fileIdMatch = link.match(/\/file\/d\/(.+?)\//);
+                    if (fileIdMatch && fileIdMatch[1]) {
+                        let imgUrl = `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+                        
+                        if (index === 0) {
+                            cover.src = imgUrl;
+                            cover.classList.remove('hidden');
+                        } else {
+                            galeri.classList.remove('hidden');
+                            galeri.innerHTML += `<img src="${imgUrl}" class="w-full h-48 object-cover rounded-xl shadow-sm border border-slate-200">`;
+                        }
+                    }
+                });
+            }
+        }
+
+        function backToHome() {
+            document.getElementById('readView').classList.add('hidden');
+            document.getElementById('homeView').classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        // Jalankan saat pertama kali dibuka
+        window.onload = loadPublishedArticles;
+    </script>
+</body>
+</html>
