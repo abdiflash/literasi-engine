@@ -45,6 +45,10 @@
                     <span id="revKategori" class="bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full mb-3 inline-block">Kategori</span>
                     <h1 id="revJudul" class="text-3xl font-black text-slate-900 mb-2">Judul Artikel</h1>
                     <p class="text-slate-500 text-sm font-medium">Oleh: <span id="revPenulis" class="text-slate-800 font-bold">Nama</span> | <span id="revTanggal">Tanggal</span></p>
+                    
+                    <p class="text-slate-500 text-sm font-medium mt-2 bg-indigo-50 inline-block px-3 py-1 rounded-lg border border-indigo-100">
+                        📷 Kredit Foto: <span id="revSumberFoto" class="text-indigo-700 font-bold italic"></span>
+                    </p>
                 </div>
 
                 <div id="revFotoArea" class="flex gap-4 overflow-x-auto mb-8 pb-2 hidden">
@@ -127,6 +131,12 @@
             document.getElementById('revPenulis').innerText = art.penulis + " (" + art.email + ")";
             document.getElementById('revTanggal').innerText = art.tanggal;
             
+            // LOGIKA BARU: Tampilkan Kredit Foto
+            const sumberFotoText = art.sumberFoto && art.sumberFoto.trim() !== "" 
+                                    ? art.sumberFoto 
+                                    : "Dokumen Pribadi (" + art.penulis + ")";
+            document.getElementById('revSumberFoto').innerText = sumberFotoText;
+            
             document.getElementById('revIsi').innerHTML = art.isi;
 
             const fotoArea = document.getElementById('revFotoArea');
@@ -137,14 +147,11 @@
                 art.foto.forEach(link => {
                     let imageSrc = link;
                     
-                    // UPDATE: Ekstrak ID File Drive dan gunakan Thumbnail API
                     let fileIdMatch = link.match(/\/file\/d\/(.+?)\//);
                     if (fileIdMatch && fileIdMatch[1]) {
-                        // Menggunakan endpoint /thumbnail (lebih stabil dan tidak diblokir Google)
                         imageSrc = `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w800`;
                     }
                     
-                    // NOTE: onerror dihapus agar jika error, ikon gambar patah tetap terlihat untuk identifikasi
                     fotoArea.innerHTML += `<img src="${imageSrc}" alt="Foto Terlampir" class="h-32 w-48 object-cover rounded-xl border-2 border-slate-200 flex-shrink-0 shadow-sm bg-slate-100">`;
                 });
             } else {
