@@ -118,7 +118,7 @@
             }
         }
 
-        // Fungsi Buka Artikel
+         // Fungsi Buka Artikel
         function openArticle(id) {
             const art = globalArticles.find(a => a.id === id);
             if(!art) return;
@@ -135,13 +135,25 @@
             // JENG JENG! Kode HTML otomatis diterjemahkan jadi teks rapi di baris ini
             document.getElementById('revIsi').innerHTML = art.isi;
 
-            // Render Foto Utama (Jika ada)
+            // Render Foto Utama (Dengan Konversi Direct Link Google Drive)
             const fotoArea = document.getElementById('revFotoArea');
             fotoArea.innerHTML = '';
+            
             if(art.foto.length > 0) {
                 fotoArea.classList.remove('hidden');
                 art.foto.forEach(link => {
-                    fotoArea.innerHTML += `<img src="${link}" class="h-32 w-48 object-cover rounded-xl border-2 border-slate-200 flex-shrink-0">`;
+                    let imageSrc = link;
+                    
+                    // Trik mengubah link viewer Google Drive menjadi link gambar langsung
+                    if (link.includes('drive.google.com/file/d/')) {
+                        const fileIdMatch = link.match(/\/d\/(.+?)\//);
+                        if (fileIdMatch && fileIdMatch[1]) {
+                            imageSrc = `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+                        }
+                    }
+                    
+                    // Tambahkan onerror fallback agar jika gambar gagal dimuat tidak merusak layout
+                    fotoArea.innerHTML += `<img src="${imageSrc}" onerror="this.style.display='none'" class="h-32 w-48 object-cover rounded-xl border-2 border-slate-200 flex-shrink-0 shadow-sm">`;
                 });
             } else {
                 fotoArea.classList.add('hidden');
