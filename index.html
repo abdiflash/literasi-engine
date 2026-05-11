@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Literasi Komunitas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --navy: #044A80; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; }
+        .navy-bg { background-color: var(--navy); }
+        .navy-text { color: var(--navy); }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .active-cat { background-color: var(--navy) !important; color: white !important; box-shadow: 0 10px 15px -3px rgba(4, 74, 128, 0.3); }
+        
+        .content-render { font-size: 1.15rem; line-height: 1.8; color: #334155; }
+        .content-render h2 { font-weight: 800; font-size: 1.75rem; margin-top: 2rem; color: #0f172a; }
+        .rank-card:nth-child(1) { border-left: 4px solid #fbbf24; }
+        .rank-card:nth-child(2) { border-left: 4px solid #94a3b8; }
+        .rank-card:nth-child(3) { border-left: 4px solid #b45309; }
+        .article-card img { transition: transform 0.5s ease; }
+        .article-card:hover img { transform: scale(1.05); }
+
+        .slider-wrapper { position: relative; overflow: hidden; border-radius: 2.5rem; background: #f1f5f9; aspect-ratio: 16/9; }
+        .slider-container { display: flex; transition: transform 0.5s ease-in-out; height: 100%; }
+        .slider-item { min-width: 100%; height: 100%; object-fit: cover; }
+        
+        .nav-btn { 
+            position: absolute; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            background: rgba(255, 255, 255, 0.9); 
+            width: 44px; 
+            height: 44px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12); 
+            cursor: pointer; 
+            z-index: 10; 
+            transition: all 0.3s ease;
+            opacity: 0;
+            color: #1e293b;
+            border: none;
+        }
+        .slider-wrapper:hover .nav-btn { opacity: 1; }
+        .nav-btn:hover { background: white; transform: translateY(-50%) scale(1.1); color: var(--navy); }
+        .nav-btn.left-4 { left: 1rem; }
+        .nav-btn.right-4 { right: 1rem; }
+    </style>
+</head>
+<body class="text-slate-900 selection:bg-blue-100">
+
+    <nav class="glass-nav sticky top-0 z-50 border-b border-slate-100">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-black navy-text tracking-tighter cursor-pointer" onclick="location.reload()">
+                PORTAL<span class="text-slate-400 font-light text-xl italic">LITERASI</span>
+            </div>
+            <div class="flex gap-2">
+                <a href="daftar.html" class="border-2 border-[#044A80] navy-text font-bold py-2 px-4 rounded-xl text-sm hover:bg-blue-50 transition-all">Daftar Penulis</a>
+                <a href="tulis.html" class="navy-bg text-white font-bold py-2 px-4 rounded-xl text-sm shadow-lg shadow-blue-900/20">Kirim Naskah</a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="homeView">
+        <header class="max-w-4xl mx-auto px-6 pt-12 text-center">
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4">Jendela <span class="navy-text">Inspirasi</span></h1>
+            
+            <div id="catContainer" class="flex gap-3 overflow-x-auto no-scrollbar py-6 justify-start md:justify-center">
+                <button class="cat-pill active-cat whitespace-nowrap px-6 py-2 rounded-full bg-white border border-slate-200 text-sm font-bold transition-all">Memuat...</button>
+            </div>
+
+            <div class="relative max-w-xl mx-auto mt-4 px-4">
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari karya atau penulis..." class="w-full bg-slate-100 border-none py-4 px-6 rounded-2xl focus:ring-2 focus:ring-[#044A80] outline-none">
+            </div>
+        </header>
+
+        <section class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-4 gap-10">
+            <aside class="lg:col-span-1 order-2 lg:order-1">
+                <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 sticky top-28">
+                    <h2 class="font-black text-lg mb-6 flex items-center gap-2">🏆 TOP PENULIS</h2>
+                    <div id="leaderboardList" class="space-y-4">
+                        <div class="animate-pulse flex space-x-4"><div class="rounded-full bg-slate-200 h-10 w-10"></div><div class="flex-1 space-y-3 py-1"><div class="h-2 bg-slate-200 rounded"></div></div></div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="lg:col-span-3 order-1 lg:order-2">
+                <div id="loading" class="text-center py-20 text-slate-400 font-bold hidden">Menyusun rak buku...</div>
+                <div id="articleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+                
+                <div id="moreContainer" class="text-center mt-12 hidden">
+                    <button onclick="loadMore()" class="bg-white border-2 border-[#044A80] navy-text font-bold py-3 px-10 rounded-2xl hover:bg-blue-50 transition-all shadow-sm">Tampilkan Lebih Banyak</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <main id="readView" class="hidden pb-20">
+        <div class="max-w-3xl mx-auto px-6 py-12">
+            <div class="flex justify-between items-center mb-8">
+                <button onclick="backToHome()" class="font-bold text-xs text-slate-400 hover:navy-text">← KEMBALI</button>
+                <button id="waShareBtn" class="bg-green-500 text-white px-5 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-md hover:bg-green-600 transition-all">Bagikan ke WA</button>
+            </div>
+
+            <div class="slider-wrapper mb-10 group">
+                <button class="nav-btn left-4" onclick="slideImg(-1)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div id="imageSlider" class="slider-container"></div>
+                <button class="nav-btn right-4" onclick="slideImg(1)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+                <p id="readKredit" class="absolute bottom-4 left-6 text-[10px] bg-black/50 text-white px-3 py-1 rounded-full shadow-inner z-10"></p>
+            </div>
+
+            <header class="mb-10">
+                <h1 id="readJudul" class="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-6 tracking-tighter"></h1>
+                <div class="flex items-center gap-4 border-b border-slate-100 pb-8 relative">
+                    <div id="readAvatarContainer" class="w-14 h-14 overflow-hidden rounded-2xl navy-bg flex items-center justify-center text-white font-bold text-2xl shadow-md border-2 border-white"></div>
+                    <div class="flex-1">
+                        <p id="readPenulis" class="font-bold text-slate-900 text-lg"></p>
+                        <p id="readStats" class="text-xs text-slate-400 font-bold uppercase tracking-widest"></p>
+                    </div>
+                    <div id="readPoinPenulis" class="absolute right-0 top-2 bg-amber-100 text-amber-600 px-3 py-1 rounded-lg text-[10px] font-black italic shadow-sm"></div>
+                </div>
+            </header>
+
+            <article id="readIsi" class="content-render mb-12"></article>
+
+            <div class="border-t border-slate-100 pt-10 text-center">
+                <button onclick="handleLike()" id="likeBtn" class="group flex flex-col items-center mx-auto transition-all">
+                    <div class="w-20 h-20 rounded-full border-2 border-slate-100 flex items-center justify-center text-3xl group-hover:scale-110 transition-all shadow-sm hover:border-red-100">❤️</div>
+                    <span id="readLikesCount" class="mt-2 font-black text-slate-900 text-xl">0</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz0yVcEnrPaIgxq-7Ht1s6eCgqQ_cT1dMnaVONUQiMSQgFZMKjSeN-48uKJyHwE3K-9yA/exec";
+        let globalArticles = [];
+        let currentOffset = 0;
+        const LIMIT = 6;
+        let currentSlide = 0;
+        let totalSlides = 0;
+        let currentArtId = "";
+        let activeCategory = "Semua";
+
+        function getThumb(url, size = "w1200", isProfile = false) {
+            if (!url || url === "" || url.includes("null")) return "https://via.placeholder.com/800x450?text=No+Image";
+            const match = url.match(/[-\w]{25,}/);
+            if(match) {
+                let thumbUrl = `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}`;
+                if(isProfile) thumbUrl += `&cb=${new Date().getTime()}`;
+                return thumbUrl;
+            }
+            return url;
+        }
+
+        async function init() {
+            // Load Leaderboard
+            fetch(`${GAS_URL}?action=getLeaderboard`)
+                .then(r => r.json())
+                .then(res => { if(res.result === "success") renderLeaderboard(res.data); });
+
+            loadArticles(true);
+        }
+
+        async function loadArticles(isInitial = false) {
+            const loading = document.getElementById('loading');
+            const moreBtn = document.getElementById('moreContainer');
+            
+            if(isInitial) {
+                currentOffset = 0;
+                globalArticles = [];
+                document.getElementById('articleGrid').innerHTML = '';
+                loading.classList.remove('hidden');
+                moreBtn.classList.add('hidden');
+            }
+
+            const q = document.getElementById('searchInput').value;
+            // Kirim request dengan Limit, Offset, dan Kategori Aktif ke server
+            const url = `${GAS_URL}?action=searchPublic&limit=${LIMIT}&offset=${currentOffset}&category=${encodeURIComponent(activeCategory)}&q=${encodeURIComponent(q)}`;
+
+            try {
+                const res = await fetch(url).then(r => r.json());
+                if(res.result === "success") {
+                    globalArticles = isInitial ? res.data : [...globalArticles, ...res.data];
+                    
+                    // Render daftar kategori yang dikirim server
+                    if(isInitial && res.categories) {
+                        renderCategories(res.categories);
+                    }
+
+                    renderArticles(res.data, !isInitial);
+                    
+                    if(res.hasMore) {
+                        moreBtn.classList.remove('hidden');
+                        currentOffset += LIMIT;
+                    } else {
+                        moreBtn.classList.add('hidden');
+                    }
+                }
+            } catch(e) { console.error("Load failed", e); }
+            loading.classList.add('hidden');
+        }
+
+        function renderArticles(newData, append = false) {
+            const grid = document.getElementById('articleGrid');
+            const html = newData.map(art => {
+                const fotoUrl = Array.isArray(art.foto) ? art.foto[0] : art.foto;
+                return `
+                <div class="article-card group cursor-pointer bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all" onclick="openReadView('${art.id}')">
+                    <div class="relative h-52 mb-4 rounded-[1.5rem] overflow-hidden bg-slate-50">
+                        <img src="${getThumb(fotoUrl)}" class="w-full h-full object-cover" loading="lazy">
+                        <span class="absolute top-3 left-3 bg-white/90 px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-sm">${art.kategori}</span>
+                    </div>
+                    <h3 class="text-lg font-extrabold text-slate-800 leading-tight line-clamp-2 group-hover:navy-text transition-colors">${art.judul}</h3>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-50">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${art.penulis}</p>
+                        <div class="flex gap-3 text-[10px] font-bold text-slate-300">
+                            <span>👁️ ${art.views || 0}</span>
+                            <span>❤️ ${art.reactions || 0}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            if(append) grid.innerHTML += html;
+            else grid.innerHTML = html;
+        }
+
+        function loadMore() {
+            loadArticles(false);
+        }
+
+        function renderCategories(cats) {
+            const container = document.getElementById('catContainer');
+            container.innerHTML = cats.map(c => `
+                <button onclick="filterCat('${c}')" class="cat-pill whitespace-nowrap px-6 py-2 rounded-full border border-slate-200 text-sm font-bold transition-all ${c === activeCategory ? 'active-cat' : 'bg-white hover:bg-slate-50'}">
+                    ${c}
+                </button>
+            `).join('');
+        }
+
+        function filterCat(cat) {
+            if(activeCategory === cat) return;
+            activeCategory = cat;
+            loadArticles(true);
+        }
+
+        function handleSearch() {
+            clearTimeout(window.searchTimer);
+            window.searchTimer = setTimeout(() => loadArticles(true), 600);
+        }
+
+        function renderLeaderboard(data) {
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = data.map(auth => `
+                <div class="rank-card flex items-center gap-3 p-3 bg-slate-50/50 rounded-2xl border border-transparent hover:border-slate-100 hover:bg-white transition-colors cursor-default">
+                    <div class="w-10 h-10 navy-bg rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
+                        ${auth.Link_Foto_Profil ? `<img src="${getThumb(auth.Link_Foto_Profil, 'w100', true)}" class="w-full h-full object-cover">` : auth.avatar}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-xs truncate text-slate-800">${auth.nama}</p>
+                        <p class="text-[9px] text-amber-500 font-black tracking-tight uppercase">${auth.poin} POINTS</p>
+                    </div>
+                </div>`).join('');
+        }
+
+        async function openReadView(id) {
+            const art = globalArticles.find(a => a.id === id);
+            if(!art) return;
+            currentArtId = id;
+            currentSlide = 0;
+            totalSlides = art.foto.length;
+
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('readView').classList.remove('hidden');
+            
+            document.getElementById('readJudul').innerText = art.judul;
+            document.getElementById('readPenulis').innerText = art.penulis;
+            document.getElementById('readIsi').innerHTML = art.isi;
+            document.getElementById('readStats').innerText = `${art.views || 0} Pembaca • ${art.kategori}`;
+            document.getElementById('readPoinPenulis').innerText = `⭐ ${art.poin_penulis || 0} PTS`;
+            document.getElementById('readLikesCount').innerText = art.reactions || 0;
+            document.getElementById('readKredit').innerText = `Kredit Foto: ${art.kredit || 'Dokumen Pribadi'}`;
+
+            const slider = document.getElementById('imageSlider');
+            slider.style.transform = `translateX(0)`;
+            slider.innerHTML = art.foto.map(f => `<img src="${getThumb(f, 'w1200')}" class="slider-item">`).join('');
+
+            const avatarBox = document.getElementById('readAvatarContainer');
+            avatarBox.innerHTML = art.Link_Foto_Profil ? `<img src="${getThumb(art.Link_Foto_Profil, 'w200', true)}" class="w-full h-full object-cover">` : art.penulis[0].toUpperCase();
+
+            fetch(`${GAS_URL}?action=hitView&id=${id}`);
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function slideImg(dir) {
+            if(totalSlides <= 1) return;
+            currentSlide = (currentSlide + dir + totalSlides) % totalSlides;
+            document.getElementById('imageSlider').style.transform = `translateX(-${currentSlide * 100}%)`;
+        }
+
+        async function handleLike() {
+            const btn = document.getElementById('likeBtn');
+            btn.classList.add('scale-90', 'opacity-50');
+            try {
+                const res = await fetch(`${GAS_URL}?action=handleLike&id=${currentArtId}`).then(r => r.json());
+                if(res.result === "success") {
+                    const count = document.getElementById('readLikesCount');
+                    count.innerText = parseInt(count.innerText) + 1;
+                    btn.disabled = true;
+                    btn.classList.remove('scale-90', 'opacity-50');
+                    btn.querySelector('div').classList.add('bg-red-50', 'border-red-500');
+                }
+            } catch(e) { btn.classList.remove('scale-90', 'opacity-50'); }
+        }
+
+        function backToHome() {
+            document.getElementById('readView').classList.add('hidden');
+            document.getElementById('homeView').classList.remove('hidden');
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        init();
+    </script>
+</body>
+</html>
