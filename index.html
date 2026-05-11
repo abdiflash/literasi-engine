@@ -11,163 +11,226 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; }
         .navy-bg { background-color: var(--navy); }
         .navy-text { color: var(--navy); }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .active-cat { background-color: var(--navy) !important; color: white !important; }
         
-        /* Style Slider Panah */
-        .slider-wrapper { position: relative; width: 100%; }
-        .slider-container { 
-            display: flex; 
-            overflow-x: auto; 
-            scroll-snap-type: x mandatory; 
-            scroll-behavior: smooth; 
-            border-radius: 2.5rem;
-            gap: 10px;
-        }
-        .slider-item { 
-            flex: 0 0 100%; 
-            scroll-snap-align: start; 
-            aspect-ratio: 16/9; 
-            object-fit: cover; 
-            border-radius: 2.5rem;
-        }
-        .nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.8);
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            z-index: 10;
-            transition: all 0.3s;
-        }
-        .nav-btn:hover { background: white; scale: 1.1; }
-        .btn-prev { left: 15px; }
-        .btn-next { right: 15px; }
+        /* Slider Styling */
+        .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 2.5rem; }
+        .slider-container { display: flex; transition: transform 0.5s ease-in-out; }
+        .slider-item { min-width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+        .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: white; width: 40px; height: 40px; border-radius: 50%; display: flex; items-center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; z-index: 10; font-weight: bold; }
+        
+        .content-render { font-size: 1.15rem; line-height: 1.8; color: #334155; }
+        .rank-card:nth-child(1) { border-left: 4px solid #fbbf24; }
     </style>
 </head>
 <body class="text-slate-900">
 
-    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+    <nav class="glass-nav sticky top-0 z-50 border-b border-slate-100">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="text-2xl font-black navy-text tracking-tighter cursor-pointer" onclick="location.reload()">
                 PORTAL<span class="text-slate-400 font-light text-xl italic">LITERASI</span>
             </div>
-            <a href="tulis.html" class="navy-bg text-white font-bold py-2 px-6 rounded-xl text-sm">Kirim Naskah</a>
+            <div class="flex gap-3">
+                <a href="daftar.html" class="border-2 border-[#044A80] navy-text font-bold py-2 px-4 rounded-xl text-sm">Daftar Penulis</a>
+                <a href="tulis.html" class="navy-bg text-white font-bold py-2 px-6 rounded-xl text-sm shadow-lg">Kirim Naskah</a>
+            </div>
         </div>
     </nav>
 
     <main id="homeView">
         <header class="max-w-4xl mx-auto px-6 pt-12 text-center">
-            <h1 class="text-4xl md:text-6xl font-extrabold mb-8">Jendela <span class="navy-text">Inspirasi</span></h1>
-            <div id="articleGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-10"></div>
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4">Jendela <span class="navy-text">Inspirasi</span></h1>
+            
+            <div id="catContainer" class="flex gap-3 overflow-x-auto no-scrollbar py-6 justify-start md:justify-center">
+                <button onclick="filterCat('Semua')" class="cat-pill active-cat whitespace-nowrap px-6 py-2 rounded-full border border-slate-200 text-sm font-bold transition-all">Semua</button>
+            </div>
+
+            <div class="relative max-w-xl mx-auto mt-4 px-6">
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari karya atau penulis..." class="w-full bg-slate-100 border-none py-4 px-6 rounded-2xl focus:ring-2 focus:ring-[#044A80] outline-none">
+            </div>
         </header>
+
+        <section class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-4 gap-10">
+            <aside class="lg:col-span-1 order-2 lg:order-1">
+                <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 sticky top-28">
+                    <h2 class="font-black text-lg mb-6 flex items-center gap-2">🏆 TOP PENULIS</h2>
+                    <div id="leaderboardList" class="space-y-4">
+                        <p class="text-xs text-slate-400">Memuat peringkat...</p>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="lg:col-span-3 order-1 lg:order-2">
+                <div id="loading" class="text-center py-20 text-slate-400 font-bold">Menyusun rak buku...</div>
+                <div id="articleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden"></div>
+            </div>
+        </section>
     </main>
 
     <main id="readView" class="hidden pb-20">
         <div class="max-w-3xl mx-auto px-6 py-12">
             <div class="flex justify-between items-center mb-8">
-                <button onclick="backToHome()" class="font-bold text-xs text-slate-400 hover:navy-text uppercase tracking-widest">← Kembali</button>
-                <button id="waShareBtn" class="bg-green-500 text-white px-5 py-2 rounded-full text-xs font-bold shadow-md">Bagikan WA</button>
+                <button onclick="backToHome()" class="font-bold text-xs text-slate-400 hover:navy-text">← KEMBALI</button>
+                <button id="waShareBtn" class="bg-green-500 text-white px-5 py-2 rounded-full text-xs font-bold shadow-md">Bagikan ke WA</button>
             </div>
 
-            <div class="slider-wrapper mb-10 group">
-                <button class="nav-btn btn-prev opacity-0 group-hover:opacity-100" onclick="moveSlider(-1)">❮</button>
-                <div id="imageSlider" class="slider-container no-scrollbar bg-slate-100"></div>
-                <button class="nav-btn btn-next opacity-0 group-hover:opacity-100" onclick="moveSlider(1)">❯</button>
+            <div class="slider-wrapper mb-6 group">
+                <div class="nav-btn left-4" onclick="slideImg(-1)">❮</div>
+                <div id="imageSlider" class="slider-container"></div>
+                <div class="nav-btn right-4" onclick="slideImg(1)">❯</div>
+                <p id="readKredit" class="absolute bottom-4 left-6 text-[10px] bg-black/50 text-white px-3 py-1 rounded-full"></p>
             </div>
 
             <header class="mb-10">
                 <h1 id="readJudul" class="text-4xl md:text-5xl font-black text-slate-900 mb-6 leading-tight"></h1>
-                <div class="flex items-center gap-4 border-b border-slate-100 pb-8">
+                <div class="flex items-center gap-4 border-b border-slate-100 pb-8 relative">
                     <div id="readAvatarContainer" class="w-14 h-14 overflow-hidden rounded-2xl navy-bg flex items-center justify-center text-white font-bold text-2xl shadow-md border-2 border-white"></div>
                     <div class="flex-1">
                         <p id="readPenulis" class="font-bold text-slate-900 text-lg"></p>
-                        <p id="readStats" class="text-xs text-slate-400 font-bold uppercase tracking-tighter"></p>
+                        <p id="readStats" class="text-xs text-slate-400 font-bold uppercase"></p>
                     </div>
+                    <div id="readPoinPenulis" class="absolute right-0 top-2 bg-amber-100 text-amber-600 px-3 py-1 rounded-lg text-[10px] font-black italic shadow-sm"></div>
                 </div>
             </header>
 
-            <article id="readIsi" class="content-render text-lg leading-relaxed text-slate-700"></article>
+            <article id="readIsi" class="content-render mb-12"></article>
+
+            <div class="border-t border-slate-100 pt-10 text-center">
+                <button onclick="handleLike()" id="likeBtn" class="group flex flex-col items-center mx-auto transition-all">
+                    <div class="w-20 h-20 rounded-full border-2 border-slate-100 flex items-center justify-center text-3xl group-hover:scale-110 transition-all shadow-sm">❤️</div>
+                    <span id="readLikesCount" class="mt-2 font-black text-slate-900 text-xl">0</span>
+                </button>
+            </div>
         </div>
     </main>
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbz0yVcEnrPaIgxq-7Ht1s6eCgqQ_cT1dMnaVONUQiMSQgFZMKjSeN-48uKJyHwE3K-9yA/exec";
         let globalArticles = [];
+        let currentSlide = 0;
+        let totalSlides = 0;
 
         function getThumb(url, size = "w1200") {
-            if (!url || url === "" || url.includes("null")) return "https://via.placeholder.com/800x450?text=Foto+Tidak+Tersedia";
+            if (!url || url === "" || url.includes("null")) return "https://via.placeholder.com/800x450?text=No+Image";
             const match = url.match(/[-\w]{25,}/);
             return match ? `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}` : url;
         }
 
         async function init() {
             try {
-                const res = await fetch(`${GAS_URL}?action=searchPublic`);
-                const json = await res.json();
-                if(json.result === "success") {
-                    globalArticles = json.data.reverse();
+                const [artRes, leadRes] = await Promise.all([
+                    fetch(`${GAS_URL}?action=searchPublic`).then(r => r.json()),
+                    fetch(`${GAS_URL}?action=getLeaderboard`).then(r => r.json())
+                ]);
+
+                if(artRes.result === "success") {
+                    globalArticles = artRes.data.reverse();
+                    renderCategories();
                     renderArticles(globalArticles);
                 }
+                if(leadRes.result === "success") renderLeaderboard(leadRes.data);
+                document.getElementById('loading').style.display = 'none';
             } catch(e) { console.error(e); }
         }
 
         function renderArticles(articles) {
             const grid = document.getElementById('articleGrid');
+            grid.classList.remove('hidden');
             grid.innerHTML = articles.map(art => `
-                <div class="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer" onclick="openReadView('${art.id}')">
-                    <img src="${getThumb(art.foto[0], 'w600')}" class="w-full h-48 object-cover rounded-[1.5rem] mb-4">
+                <div class="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group" onclick="openReadView('${art.id}')">
+                    <div class="relative h-52 mb-4 rounded-[1.5rem] overflow-hidden">
+                        <img src="${getThumb(art.foto[0])}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                        <span class="absolute top-3 left-3 bg-white/90 px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-sm">${art.kategori}</span>
+                    </div>
                     <h3 class="font-extrabold text-lg line-clamp-2">${art.judul}</h3>
-                    <p class="text-[10px] text-slate-400 mt-2 font-bold uppercase">${art.penulis}</p>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-50 text-[10px] font-bold text-slate-400">
+                        <p class="uppercase">${art.penulis}</p>
+                        <div class="flex gap-3"><span>👁️ ${art.views || 0}</span><span>❤️ ${art.reactions || 0}</span></div>
+                    </div>
                 </div>
             `).join('');
         }
 
+        function renderLeaderboard(data) {
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = data.map((auth, idx) => `
+                <div class="rank-card flex items-center gap-3 p-3 bg-slate-50/50 rounded-2xl">
+                    <div class="w-10 h-10 navy-bg rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                        ${auth.Link_Foto_Profil ? `<img src="${getThumb(auth.Link_Foto_Profil, 'w100')}" class="w-full h-full object-cover">` : auth.avatar}
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-xs truncate">${auth.nama}</p>
+                        <p class="text-[9px] text-amber-500 font-black">${auth.poin} PTS</p>
+                    </div>
+                </div>`).join('');
+        }
+
         async function openReadView(id) {
             const art = globalArticles.find(a => a.id === id);
+            currentSlide = 0;
+            totalSlides = art.foto.length;
+
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('readView').classList.remove('hidden');
 
-            // Logika Slider
+            // Setup Slider
             const slider = document.getElementById('imageSlider');
-            slider.innerHTML = art.foto.filter(f => f && f !== "").map(f => `<img src="${getThumb(f, 'w1200')}" class="slider-item">`).join('');
-            
-            // Logika Avatar Profil (Sesuai kolom Link_Foto_Profil)
-            const avatarBox = document.getElementById('readAvatarContainer');
-            // Properti Link_Foto_Profil harus ada di objek art (dipassing dari GAS)
-            if(art.Link_Foto_Profil) {
-                avatarBox.innerHTML = `<img src="${getThumb(art.Link_Foto_Profil, 'w200')}" class="w-full h-full object-cover">`;
-            } else {
-                avatarBox.innerHTML = art.penulis[0].toUpperCase();
-            }
+            slider.style.transform = `translateX(0)`;
+            slider.innerHTML = art.foto.map(f => `<img src="${getThumb(f, 'w1200')}" class="slider-item">`).join('');
 
+            // Setup Avatar & Poin
+            const avatarBox = document.getElementById('readAvatarContainer');
+            avatarBox.innerHTML = art.Link_Foto_Profil ? `<img src="${getThumb(art.Link_Foto_Profil, 'w200')}" class="w-full h-full object-cover">` : art.penulis[0].toUpperCase();
+            
             document.getElementById('readJudul').innerText = art.judul;
             document.getElementById('readPenulis').innerText = art.penulis;
             document.getElementById('readIsi').innerHTML = art.isi;
-            document.getElementById('readStats').innerText = `${art.views || 0} Views • ${art.kategori}`;
+            document.getElementById('readKredit').innerText = `Kredit Foto: ${art.kredit || 'Dok. Pribadi'}`;
+            document.getElementById('readStats').innerText = `${art.views || 0} PEMBACA • ${art.kategori}`;
+            document.getElementById('readPoinPenulis').innerText = `⭐ ${art.poin_penulis || 0} PTS`;
+            document.getElementById('readLikesCount').innerText = art.reactions || 0;
 
             // WA Share
-            const currentUrl = window.location.href.split('?')[0];
-            const waText = encodeURIComponent(`*${art.judul}*\n\nBaca artikel selengkapnya di:\n${currentUrl}?read=${id}`);
+            const waText = encodeURIComponent(`*${art.judul}*\n\nBaca di: ${window.location.href.split('?')[0]}?read=${id}`);
             document.getElementById('waShareBtn').onclick = () => window.open(`https://wa.me/?text=${waText}`);
 
+            fetch(`${GAS_URL}?action=hitView&id=${id}`);
             window.scrollTo(0,0);
         }
 
-        // FUNGSI NAVIGASI SLIDER
-        function moveSlider(direction) {
-            const slider = document.getElementById('imageSlider');
-            const itemWidth = slider.querySelector('.slider-item').clientWidth;
-            slider.scrollBy({ left: direction * itemWidth, behavior: 'smooth' });
+        function slideImg(dir) {
+            currentSlide = (currentSlide + dir + totalSlides) % totalSlides;
+            document.getElementById('imageSlider').style.transform = `translateX(-${currentSlide * 100}%)`;
+        }
+
+        function handleSearch() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = globalArticles.filter(a => a.judul.toLowerCase().includes(q) || a.penulis.toLowerCase().includes(q));
+            renderArticles(filtered);
+        }
+
+        function filterCat(cat) {
+            document.querySelectorAll('.cat-pill').forEach(b => b.classList.toggle('active-cat', b.innerText === cat));
+            renderArticles(cat === "Semua" ? globalArticles : globalArticles.filter(a => a.kategori === cat));
+        }
+
+        function renderCategories() {
+            const cats = ["Semua", ...new Set(globalArticles.map(a => a.kategori))];
+            document.getElementById('catContainer').innerHTML = cats.map(c => `<button onclick="filterCat('${c}')" class="cat-pill whitespace-nowrap px-6 py-2 rounded-full border border-slate-200 text-sm font-bold transition-all hover:bg-slate-50">${c}</button>`).join('');
+        }
+
+        async function handleLike() {
+            const artId = globalArticles.find(a => a.judul === document.getElementById('readJudul').innerText).id;
+            const res = await fetch(`${GAS_URL}?action=handleLike&id=${artId}`);
+            const data = await res.json();
+            if(data.result === "success") {
+                const l = document.getElementById('readLikesCount');
+                l.innerText = parseInt(l.innerText) + 1;
+                document.getElementById('likeBtn').onclick = null;
+            }
         }
 
         function backToHome() {
