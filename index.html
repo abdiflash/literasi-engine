@@ -18,13 +18,10 @@
         
         .content-render { font-size: 1.15rem; line-height: 1.8; color: #334155; }
         .content-render h2 { font-weight: 800; font-size: 1.75rem; margin-top: 2rem; color: #0f172a; }
-        .rank-card:nth-child(1) { border-left: 4px solid #fbbf24; }
-        .rank-card:nth-child(2) { border-left: 4px solid #94a3b8; }
-        .rank-card:nth-child(3) { border-left: 4px solid #b45309; }
         
-        /* Animasi loading gambar */
-        .img-loading { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
-        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        /* Gaya khusus untuk slider foto agar bisa digeser */
+        .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; border-radius: 2.5rem; }
+        .slider-item { flex: 0 0 100%; scroll-snap-align: start; aspect-ratio: 16/9; object-fit: cover; }
     </style>
 </head>
 <body class="text-slate-900 selection:bg-blue-100">
@@ -45,9 +42,9 @@
         <header class="max-w-4xl mx-auto px-6 pt-12 text-center">
             <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4">Jendela <span class="navy-text">Inspirasi</span></h1>
             <div id="catContainer" class="flex gap-3 overflow-x-auto no-scrollbar py-6 justify-start md:justify-center">
-                <button onclick="filterCat('Semua')" class="cat-pill active-cat whitespace-nowrap px-6 py-2 rounded-full bg-white border border-slate-200 text-sm font-bold transition-all">Semua</button>
+                <button class="cat-pill active-cat whitespace-nowrap px-6 py-2 rounded-full bg-white border border-slate-200 text-sm font-bold">Semua</button>
             </div>
-            <div class="relative max-w-xl mx-auto mt-4">
+            <div class="relative max-w-xl mx-auto mt-4 px-6">
                 <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari karya atau penulis..." class="w-full bg-slate-100 border-none py-4 px-6 rounded-2xl focus:ring-2 focus:ring-[#044A80] outline-none">
             </div>
         </header>
@@ -56,12 +53,9 @@
             <aside class="lg:col-span-1 order-2 lg:order-1">
                 <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 sticky top-28">
                     <h2 class="font-black text-lg mb-6 flex items-center gap-2">🏆 TOP PENULIS</h2>
-                    <div id="leaderboardList" class="space-y-4">
-                        <div class="animate-pulse flex space-x-4"><div class="rounded-full bg-slate-200 h-10 w-10"></div><div class="flex-1 space-y-3 py-1"><div class="h-2 bg-slate-200 rounded"></div></div></div>
-                    </div>
+                    <div id="leaderboardList" class="space-y-4"></div>
                 </div>
             </aside>
-
             <div class="lg:col-span-3 order-1 lg:order-2">
                 <div id="loading" class="text-center py-20 text-slate-400 font-bold">Menyusun rak buku...</div>
                 <div id="articleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden"></div>
@@ -73,51 +67,37 @@
         <div class="max-w-3xl mx-auto px-6 py-12">
             <div class="flex justify-between items-center mb-8">
                 <button onclick="backToHome()" class="font-bold text-xs text-slate-400 hover:navy-text">← KEMBALI</button>
-                <button id="waShareBtn" class="bg-green-500 text-white px-5 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-md hover:bg-green-600 transition-all">Bagikan ke WA</button>
+                <button id="waShareBtn" class="bg-green-500 text-white px-5 py-2 rounded-full text-xs font-bold flex items-center gap-2">Bagikan WA</button>
             </div>
 
-            <div class="mb-10 rounded-[2.5rem] overflow-hidden shadow-2xl bg-slate-100 aspect-video">
-                <img id="readHeroImage" src="" class="w-full h-full object-cover">
+            <div id="sliderWrapper" class="mb-10 relative group">
+                <div id="imageSlider" class="slider-container bg-slate-100"></div>
+                <div id="sliderNav" class="flex justify-center gap-2 mt-4"></div>
             </div>
 
             <header class="mb-10">
-                <h1 id="readJudul" class="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-6 tracking-tighter"></h1>
+                <h1 id="readJudul" class="text-4xl md:text-5xl font-black text-slate-900 mb-6"></h1>
                 <div class="flex items-center gap-4 border-b border-slate-100 pb-8">
-                    <div id="readAvatarContainer" class="w-14 h-14 overflow-hidden rounded-2xl navy-bg flex items-center justify-center text-white font-bold text-2xl"></div>
+                    <div id="readAvatarContainer" class="w-14 h-14 overflow-hidden rounded-2xl navy-bg flex items-center justify-center text-white font-bold text-2xl shadow-md"></div>
                     <div class="flex-1">
                         <p id="readPenulis" class="font-bold text-slate-900 text-lg"></p>
-                        <p id="readStats" class="text-xs text-slate-400 font-bold uppercase tracking-widest"></p>
-                    </div>
-                    <div class="text-right">
-                        <span id="readPoinPenulis" class="bg-amber-100 text-amber-600 px-3 py-1 rounded-lg text-[10px] font-black italic"></span>
+                        <p id="readStats" class="text-xs text-slate-400 font-bold uppercase"></p>
                     </div>
                 </div>
             </header>
 
             <article id="readIsi" class="content-render mb-12"></article>
-
-            <div class="border-t border-slate-100 pt-10 text-center">
-                <button onclick="handleLike()" id="likeBtn" class="group flex flex-col items-center mx-auto transition-all">
-                    <div class="w-20 h-20 rounded-full border-2 border-slate-100 flex items-center justify-center text-3xl group-hover:scale-110 transition-all shadow-sm">❤️</div>
-                    <span id="readLikesCount" class="mt-2 font-black text-slate-900 text-xl">0</span>
-                </button>
-            </div>
         </div>
     </main>
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbz0yVcEnrPaIgxq-7Ht1s6eCgqQ_cT1dMnaVONUQiMSQgFZMKjSeN-48uKJyHwE3K-9yA/exec";
         let globalArticles = [];
-        let currentArtId = null;
 
-        // Fungsi Super Fix Gambar Google Drive
         function getThumb(url, size = "w800") {
-            if (!url || url === "" || url === "null") return "https://images.unsplash.com/photo-1455390582262-044cdead27d8?w=800";
-            if (url.includes("drive.google.com")) {
-                const match = url.match(/[-\w]{25,}/);
-                if (match) return `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}`;
-            }
-            return url;
+            if (!url || url === "" || url.includes("null")) return "https://via.placeholder.com/800x450?text=No+Image";
+            const match = url.match(/[-\w]{25,}/);
+            return match ? `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}` : url;
         }
 
         async function init() {
@@ -129,120 +109,75 @@
 
                 if(artRes.result === "success") {
                     globalArticles = artRes.data.reverse();
-                    renderCategories();
                     renderArticles(globalArticles);
                 }
                 if(leadRes.result === "success") renderLeaderboard(leadRes.data);
                 document.getElementById('loading').style.display = 'none';
-            } catch(e) { console.error("Load failed", e); }
+            } catch(e) { console.error(e); }
         }
 
         function renderArticles(articles) {
             const grid = document.getElementById('articleGrid');
             grid.classList.remove('hidden');
-            grid.innerHTML = articles.map(art => {
-                const fotoUrl = Array.isArray(art.foto) ? art.foto[0] : art.foto;
-                return `
-                <div class="group cursor-pointer bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all" onclick="openReadView('${art.id}')">
-                    <div class="relative h-52 mb-4 rounded-[1.5rem] overflow-hidden bg-slate-100">
-                        <img src="${getThumb(fotoUrl)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                        <span class="absolute top-3 left-3 bg-white/90 px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-sm">${art.kategori}</span>
-                    </div>
-                    <h3 class="text-lg font-extrabold text-slate-800 leading-tight line-clamp-2 group-hover:navy-text transition-colors">${art.judul}</h3>
-                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-50">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${art.penulis}</p>
-                        <div class="flex gap-3 text-[10px] font-bold text-slate-300">
-                            <span>👁️ ${art.views || 0}</span>
-                            <span>❤️ ${art.reactions || 0}</span>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
+            grid.innerHTML = articles.map(art => `
+                <div class="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer" onclick="openReadView('${art.id}')">
+                    <img src="${getThumb(art.foto[0])}" class="w-full h-48 object-cover rounded-[1.5rem] mb-4">
+                    <h3 class="font-extrabold text-lg line-clamp-2">${art.judul}</h3>
+                    <p class="text-xs text-slate-400 mt-2 font-bold uppercase">${art.penulis}</p>
+                </div>
+            `).join('');
         }
 
         function renderLeaderboard(data) {
             const list = document.getElementById('leaderboardList');
-            list.innerHTML = data.map((auth) => {
-                const avatar = auth.foto_profil ? `<img src="${getThumb(auth.foto_profil, 'w100')}" class="w-full h-full object-cover">` : auth.avatar;
+            list.innerHTML = data.map(auth => {
+                // Menggunakan properti Link_Foto_Profil sesuai nama kolom sheet
+                const profileImg = auth.Link_Foto_Profil ? 
+                    `<img src="${getThumb(auth.Link_Foto_Profil, 'w100')}" class="w-full h-full object-cover">` : 
+                    auth.avatar;
                 return `
-                <div class="rank-card flex items-center gap-3 p-3 bg-slate-50/50 rounded-2xl border border-transparent hover:border-slate-100 transition-all">
-                    <div class="w-10 h-10 navy-bg rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm">${avatar}</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-bold text-xs truncate text-slate-800">${auth.nama}</p>
-                        <p class="text-[9px] font-black text-amber-500 uppercase tracking-tighter">${auth.poin} POINTS</p>
-                    </div>
-                </div>`;
+                    <div class="flex items-center gap-3 p-3 bg-slate-50/50 rounded-2xl">
+                        <div class="w-10 h-10 navy-bg rounded-xl overflow-hidden flex items-center justify-center text-white font-bold shadow-sm">${profileImg}</div>
+                        <div>
+                            <p class="font-bold text-xs">${auth.nama}</p>
+                            <p class="text-[9px] text-amber-500 font-black">${auth.poin} PTS</p>
+                        </div>
+                    </div>`;
             }).join('');
         }
 
         async function openReadView(id) {
             const art = globalArticles.find(a => a.id === id);
-            if(!art) return;
-            currentArtId = id;
-            
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('readView').classList.remove('hidden');
+
+            // SLIDER LOGIC
+            const slider = document.getElementById('imageSlider');
+            slider.innerHTML = art.foto.map(f => `<img src="${getThumb(f, 'w1200')}" class="slider-item">`).join('');
             
-            // Isi Data
-            document.getElementById('readJudul').innerText = art.judul;
-            document.getElementById('readPenulis').innerText = art.penulis;
-            document.getElementById('readIsi').innerHTML = art.isi;
-            document.getElementById('readStats').innerText = `${art.views || 0} Pembaca • ${art.kategori}`;
-            document.getElementById('readPoinPenulis').innerText = `⭐ ${art.poin_penulis || 0} PTS`;
-            document.getElementById('readLikesCount').innerText = art.reactions || 0;
-
-            // Hero Image
-            const fotoUtama = Array.isArray(art.foto) ? art.foto[0] : art.foto;
-            document.getElementById('readHeroImage').src = getThumb(fotoUtama, "w1200");
-
-            // Avatar Penulis
+            // AVATAR LOGIC (Sesuai kolom Link_Foto_Profil)
             const avatarBox = document.getElementById('readAvatarContainer');
-            if(art.foto_profil_penulis) {
-                avatarBox.innerHTML = `<img src="${getThumb(art.foto_profil_penulis, 'w200')}" class="w-full h-full object-cover">`;
+            if(art.Link_Foto_Profil) {
+                avatarBox.innerHTML = `<img src="${getThumb(art.Link_Foto_Profil, 'w200')}" class="w-full h-full object-cover">`;
             } else {
                 avatarBox.innerHTML = art.penulis[0].toUpperCase();
             }
 
-            // Share WhatsApp (Link Spesifik)
-            const shareLink = window.location.href.split('?')[0] + "?read=" + id;
-            const waText = encodeURIComponent(`*${art.judul}*\nKarya: ${art.penulis}\n\nBaca selengkapnya di sini:\n${shareLink}`);
+            document.getElementById('readJudul').innerText = art.judul;
+            document.getElementById('readPenulis').innerText = art.penulis;
+            document.getElementById('readIsi').innerHTML = art.isi;
+            document.getElementById('readStats').innerText = `${art.views || 0} Views • ${art.kategori}`;
+
+            // WA Share
+            const waText = encodeURIComponent(`*${art.judul}*\n\nBaca di: ${window.location.href}?read=${id}`);
             document.getElementById('waShareBtn').onclick = () => window.open(`https://wa.me/?text=${waText}`);
 
-            fetch(`${GAS_URL}?action=hitView&id=${id}`);
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        }
-
-        function handleSearch() {
-            const q = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = globalArticles.filter(a => a.judul.toLowerCase().includes(q) || a.penulis.toLowerCase().includes(q));
-            renderArticles(filtered);
-        }
-
-        function filterCat(cat) {
-            document.querySelectorAll('.cat-pill').forEach(b => b.innerText === cat ? b.classList.add('active-cat') : b.classList.remove('active-cat'));
-            renderArticles(cat === "Semua" ? globalArticles : globalArticles.filter(a => a.kategori === cat));
-        }
-
-        function renderCategories() {
-            const cats = ["Semua", ...new Set(globalArticles.map(a => a.kategori))];
-            const container = document.getElementById('catContainer');
-            container.innerHTML = cats.map(c => `<button onclick="filterCat('${c}')" class="cat-pill whitespace-nowrap px-6 py-2 rounded-full bg-white border border-slate-200 text-sm font-bold transition-all hover:border-blue-200">${c}</button>`).join('');
-        }
-
-        async function handleLike() {
-            const res = await fetch(`${GAS_URL}?action=handleLike&id=${currentArtId}`);
-            const data = await res.json();
-            if(data.result === "success") {
-                const count = document.getElementById('readLikesCount');
-                count.innerText = parseInt(count.innerText) + 1;
-                document.getElementById('likeBtn').disabled = true;
-            }
+            window.scrollTo(0,0);
         }
 
         function backToHome() {
             document.getElementById('readView').classList.add('hidden');
             document.getElementById('homeView').classList.remove('hidden');
-            window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
         init();
