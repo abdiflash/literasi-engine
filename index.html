@@ -11,82 +11,92 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; }
         .navy-bg { background-color: var(--navy); }
         .navy-text { color: var(--navy); }
-        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .active-cat { background-color: var(--navy) !important; color: white !important; box-shadow: 0 10px 15px -3px rgba(4, 74, 128, 0.3); }
         
-        .content-render { font-size: 1.15rem; line-height: 1.8; color: #334155; }
-        .content-render h2 { font-weight: 800; font-size: 1.75rem; margin-top: 2rem; color: #0f172a; }
-        
-        /* Gaya khusus untuk slider foto agar bisa digeser */
-        .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; border-radius: 2.5rem; }
-        .slider-item { flex: 0 0 100%; scroll-snap-align: start; aspect-ratio: 16/9; object-fit: cover; }
+        /* Style Slider Panah */
+        .slider-wrapper { position: relative; width: 100%; }
+        .slider-container { 
+            display: flex; 
+            overflow-x: auto; 
+            scroll-snap-type: x mandatory; 
+            scroll-behavior: smooth; 
+            border-radius: 2.5rem;
+            gap: 10px;
+        }
+        .slider-item { 
+            flex: 0 0 100%; 
+            scroll-snap-align: start; 
+            aspect-ratio: 16/9; 
+            object-fit: cover; 
+            border-radius: 2.5rem;
+        }
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 10;
+            transition: all 0.3s;
+        }
+        .nav-btn:hover { background: white; scale: 1.1; }
+        .btn-prev { left: 15px; }
+        .btn-next { right: 15px; }
     </style>
 </head>
-<body class="text-slate-900 selection:bg-blue-100">
+<body class="text-slate-900">
 
-    <nav class="glass-nav sticky top-0 z-50 border-b border-slate-100">
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="text-2xl font-black navy-text tracking-tighter cursor-pointer" onclick="location.reload()">
                 PORTAL<span class="text-slate-400 font-light text-xl italic">LITERASI</span>
             </div>
-            <div class="flex gap-2">
-                <a href="daftar.html" class="border-2 border-[#044A80] navy-text font-bold py-2 px-4 rounded-xl text-sm hover:bg-blue-50 transition-all">Daftar Penulis</a>
-                <a href="tulis.html" class="navy-bg text-white font-bold py-2 px-4 rounded-xl text-sm shadow-lg shadow-blue-900/20">Kirim Naskah</a>
-            </div>
+            <a href="tulis.html" class="navy-bg text-white font-bold py-2 px-6 rounded-xl text-sm">Kirim Naskah</a>
         </div>
     </nav>
 
     <main id="homeView">
         <header class="max-w-4xl mx-auto px-6 pt-12 text-center">
-            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4">Jendela <span class="navy-text">Inspirasi</span></h1>
-            <div id="catContainer" class="flex gap-3 overflow-x-auto no-scrollbar py-6 justify-start md:justify-center">
-                <button class="cat-pill active-cat whitespace-nowrap px-6 py-2 rounded-full bg-white border border-slate-200 text-sm font-bold">Semua</button>
-            </div>
-            <div class="relative max-w-xl mx-auto mt-4 px-6">
-                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari karya atau penulis..." class="w-full bg-slate-100 border-none py-4 px-6 rounded-2xl focus:ring-2 focus:ring-[#044A80] outline-none">
-            </div>
+            <h1 class="text-4xl md:text-6xl font-extrabold mb-8">Jendela <span class="navy-text">Inspirasi</span></h1>
+            <div id="articleGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-10"></div>
         </header>
-
-        <section class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-4 gap-10">
-            <aside class="lg:col-span-1 order-2 lg:order-1">
-                <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 sticky top-28">
-                    <h2 class="font-black text-lg mb-6 flex items-center gap-2">🏆 TOP PENULIS</h2>
-                    <div id="leaderboardList" class="space-y-4"></div>
-                </div>
-            </aside>
-            <div class="lg:col-span-3 order-1 lg:order-2">
-                <div id="loading" class="text-center py-20 text-slate-400 font-bold">Menyusun rak buku...</div>
-                <div id="articleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden"></div>
-            </div>
-        </section>
     </main>
 
     <main id="readView" class="hidden pb-20">
         <div class="max-w-3xl mx-auto px-6 py-12">
             <div class="flex justify-between items-center mb-8">
-                <button onclick="backToHome()" class="font-bold text-xs text-slate-400 hover:navy-text">← KEMBALI</button>
-                <button id="waShareBtn" class="bg-green-500 text-white px-5 py-2 rounded-full text-xs font-bold flex items-center gap-2">Bagikan WA</button>
+                <button onclick="backToHome()" class="font-bold text-xs text-slate-400 hover:navy-text uppercase tracking-widest">← Kembali</button>
+                <button id="waShareBtn" class="bg-green-500 text-white px-5 py-2 rounded-full text-xs font-bold shadow-md">Bagikan WA</button>
             </div>
 
-            <div id="sliderWrapper" class="mb-10 relative group">
-                <div id="imageSlider" class="slider-container bg-slate-100"></div>
-                <div id="sliderNav" class="flex justify-center gap-2 mt-4"></div>
+            <div class="slider-wrapper mb-10 group">
+                <button class="nav-btn btn-prev opacity-0 group-hover:opacity-100" onclick="moveSlider(-1)">❮</button>
+                <div id="imageSlider" class="slider-container no-scrollbar bg-slate-100"></div>
+                <button class="nav-btn btn-next opacity-0 group-hover:opacity-100" onclick="moveSlider(1)">❯</button>
             </div>
 
             <header class="mb-10">
-                <h1 id="readJudul" class="text-4xl md:text-5xl font-black text-slate-900 mb-6"></h1>
+                <h1 id="readJudul" class="text-4xl md:text-5xl font-black text-slate-900 mb-6 leading-tight"></h1>
                 <div class="flex items-center gap-4 border-b border-slate-100 pb-8">
-                    <div id="readAvatarContainer" class="w-14 h-14 overflow-hidden rounded-2xl navy-bg flex items-center justify-center text-white font-bold text-2xl shadow-md"></div>
+                    <div id="readAvatarContainer" class="w-14 h-14 overflow-hidden rounded-2xl navy-bg flex items-center justify-center text-white font-bold text-2xl shadow-md border-2 border-white"></div>
                     <div class="flex-1">
                         <p id="readPenulis" class="font-bold text-slate-900 text-lg"></p>
-                        <p id="readStats" class="text-xs text-slate-400 font-bold uppercase"></p>
+                        <p id="readStats" class="text-xs text-slate-400 font-bold uppercase tracking-tighter"></p>
                     </div>
                 </div>
             </header>
 
-            <article id="readIsi" class="content-render mb-12"></article>
+            <article id="readIsi" class="content-render text-lg leading-relaxed text-slate-700"></article>
         </div>
     </main>
 
@@ -94,56 +104,32 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbz0yVcEnrPaIgxq-7Ht1s6eCgqQ_cT1dMnaVONUQiMSQgFZMKjSeN-48uKJyHwE3K-9yA/exec";
         let globalArticles = [];
 
-        function getThumb(url, size = "w800") {
-            if (!url || url === "" || url.includes("null")) return "https://via.placeholder.com/800x450?text=No+Image";
+        function getThumb(url, size = "w1200") {
+            if (!url || url === "" || url.includes("null")) return "https://via.placeholder.com/800x450?text=Foto+Tidak+Tersedia";
             const match = url.match(/[-\w]{25,}/);
             return match ? `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}` : url;
         }
 
         async function init() {
             try {
-                const [artRes, leadRes] = await Promise.all([
-                    fetch(`${GAS_URL}?action=searchPublic`).then(r => r.json()),
-                    fetch(`${GAS_URL}?action=getLeaderboard`).then(r => r.json())
-                ]);
-
-                if(artRes.result === "success") {
-                    globalArticles = artRes.data.reverse();
+                const res = await fetch(`${GAS_URL}?action=searchPublic`);
+                const json = await res.json();
+                if(json.result === "success") {
+                    globalArticles = json.data.reverse();
                     renderArticles(globalArticles);
                 }
-                if(leadRes.result === "success") renderLeaderboard(leadRes.data);
-                document.getElementById('loading').style.display = 'none';
             } catch(e) { console.error(e); }
         }
 
         function renderArticles(articles) {
             const grid = document.getElementById('articleGrid');
-            grid.classList.remove('hidden');
             grid.innerHTML = articles.map(art => `
                 <div class="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer" onclick="openReadView('${art.id}')">
-                    <img src="${getThumb(art.foto[0])}" class="w-full h-48 object-cover rounded-[1.5rem] mb-4">
+                    <img src="${getThumb(art.foto[0], 'w600')}" class="w-full h-48 object-cover rounded-[1.5rem] mb-4">
                     <h3 class="font-extrabold text-lg line-clamp-2">${art.judul}</h3>
-                    <p class="text-xs text-slate-400 mt-2 font-bold uppercase">${art.penulis}</p>
+                    <p class="text-[10px] text-slate-400 mt-2 font-bold uppercase">${art.penulis}</p>
                 </div>
             `).join('');
-        }
-
-        function renderLeaderboard(data) {
-            const list = document.getElementById('leaderboardList');
-            list.innerHTML = data.map(auth => {
-                // Menggunakan properti Link_Foto_Profil sesuai nama kolom sheet
-                const profileImg = auth.Link_Foto_Profil ? 
-                    `<img src="${getThumb(auth.Link_Foto_Profil, 'w100')}" class="w-full h-full object-cover">` : 
-                    auth.avatar;
-                return `
-                    <div class="flex items-center gap-3 p-3 bg-slate-50/50 rounded-2xl">
-                        <div class="w-10 h-10 navy-bg rounded-xl overflow-hidden flex items-center justify-center text-white font-bold shadow-sm">${profileImg}</div>
-                        <div>
-                            <p class="font-bold text-xs">${auth.nama}</p>
-                            <p class="text-[9px] text-amber-500 font-black">${auth.poin} PTS</p>
-                        </div>
-                    </div>`;
-            }).join('');
         }
 
         async function openReadView(id) {
@@ -151,12 +137,13 @@
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('readView').classList.remove('hidden');
 
-            // SLIDER LOGIC
+            // Logika Slider
             const slider = document.getElementById('imageSlider');
-            slider.innerHTML = art.foto.map(f => `<img src="${getThumb(f, 'w1200')}" class="slider-item">`).join('');
+            slider.innerHTML = art.foto.filter(f => f && f !== "").map(f => `<img src="${getThumb(f, 'w1200')}" class="slider-item">`).join('');
             
-            // AVATAR LOGIC (Sesuai kolom Link_Foto_Profil)
+            // Logika Avatar Profil (Sesuai kolom Link_Foto_Profil)
             const avatarBox = document.getElementById('readAvatarContainer');
+            // Properti Link_Foto_Profil harus ada di objek art (dipassing dari GAS)
             if(art.Link_Foto_Profil) {
                 avatarBox.innerHTML = `<img src="${getThumb(art.Link_Foto_Profil, 'w200')}" class="w-full h-full object-cover">`;
             } else {
@@ -169,10 +156,18 @@
             document.getElementById('readStats').innerText = `${art.views || 0} Views • ${art.kategori}`;
 
             // WA Share
-            const waText = encodeURIComponent(`*${art.judul}*\n\nBaca di: ${window.location.href}?read=${id}`);
+            const currentUrl = window.location.href.split('?')[0];
+            const waText = encodeURIComponent(`*${art.judul}*\n\nBaca artikel selengkapnya di:\n${currentUrl}?read=${id}`);
             document.getElementById('waShareBtn').onclick = () => window.open(`https://wa.me/?text=${waText}`);
 
             window.scrollTo(0,0);
+        }
+
+        // FUNGSI NAVIGASI SLIDER
+        function moveSlider(direction) {
+            const slider = document.getElementById('imageSlider');
+            const itemWidth = slider.querySelector('.slider-item').clientWidth;
+            slider.scrollBy({ left: direction * itemWidth, behavior: 'smooth' });
         }
 
         function backToHome() {
