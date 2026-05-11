@@ -103,148 +103,137 @@
     </main>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbz0yVcEnrPaIgxq-7Ht1s6eCgqQ_cT1dMnaVONUQiMSQgFZMKjSeN-48uKJyHwE3K-9yA/exec";
-        let globalArticles = [];
-        let currentArtId = null;
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz0yVcEnrPaIgxq-7Ht1s6eCgqQ_cT1dMnaVONUQiMSQgFZMKjSeN-48uKJyHwE3K-9yA/exec";
+    let globalArticles = [];
+    let currentArtId = null;
 
-        // --- Core Functions ---
+    // --- FUNGSI FIX GAMBAR DRIVE ---
+    function getThumb(url, size = "w800") {
+        if (!url || url === "") return "https://images.unsplash.com/photo-1455390582262-044cdead27d8?w=800";
+        
+        // Cek jika link adalah link Google Drive
+        if (url.includes("drive.google.com")) {
+            // Regex lebih kuat untuk menangkap ID File Drive
+            const match = url.match(/[-\w]{25,}/);
+            if (match) return `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}`;
+        }
+        return url; // Kembalikan URL asli jika bukan Drive (misal Unsplash/Imgur)
+    }
 
-        async function init() {
-            try {
-                const [artRes, leadRes] = await Promise.all([
-                    fetch(`${GAS_URL}?action=searchPublic`).then(r => r.json()),
-                    fetch(`${GAS_URL}?action=getLeaderboard`).then(r => r.json())
-                ]);
+    async function init() {
+        try {
+            const [artRes, leadRes] = await Promise.all([
+                fetch(`${GAS_URL}?action=searchPublic`).then(r => r.json()),
+                fetch(`${GAS_URL}?action=getLeaderboard`).then(r => r.json())
+            ]);
 
-                if(artRes.result === "success") {
-                    globalArticles = artRes.data.reverse();
-                    renderCategories();
-                    renderArticles(globalArticles);
-                }
-                if(leadRes.result === "success") renderLeaderboard(leadRes.data);
-                document.getElementById('loading').style.display = 'none';
-            } catch(e) { 
-                console.error("Load failed", e);
-                document.getElementById('loading').innerText = "Gagal memuat data. Coba refresh halaman.";
+            if(artRes.result === "success") {
+                globalArticles = artRes.data.reverse();
+                renderCategories();
+                renderArticles(globalArticles);
             }
+            if(leadRes.result === "success") renderLeaderboard(leadRes.data);
+            document.getElementById('loading').style.display = 'none';
+        } catch(e) { 
+            console.error("Load failed", e);
         }
+    }
 
-        // Helper: Mengubah Link Drive menjadi Thumbnail
-        function getThumb(url, size = "w800") {
-            if (!url) return "https://images.unsplash.com/photo-1455390582262-044cdead27d8?w=800";
-            const fileId = url.match(/[-\w]{25,}/);
-            return fileId ? `https://drive.google.com/thumbnail?id=${fileId[0]}&sz=${size}` : url;
-        }
-
-        function renderArticles(articles) {
-            const grid = document.getElementById('articleGrid');
-            grid.classList.remove('hidden');
-            grid.innerHTML = articles.map(art => `
-                <div class="article-card group cursor-pointer bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all" onclick="openReadView('${art.id}')">
-                    <div class="relative h-52 mb-4 rounded-[1.5rem] overflow-hidden bg-slate-50">
-                        <img src="${getThumb(art.foto[0])}" class="w-full h-full object-cover">
-                        <span class="absolute top-3 left-3 bg-white/90 px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-sm">${art.kategori}</span>
+    function renderArticles(articles) {
+        const grid = document.getElementById('articleGrid');
+        grid.classList.remove('hidden');
+        grid.innerHTML = articles.map(art => {
+            // Pastikan art.foto adalah array atau string
+            const fotoUrl = Array.isArray(art.foto) ? art.foto[0] : art.foto;
+            return `
+            <div class="article-card group cursor-pointer bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all" onclick="openReadView('${art.id}')">
+                <div class="relative h-52 mb-4 rounded-[1.5rem] overflow-hidden bg-slate-100">
+                    <img src="${getThumb(fotoUrl)}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/800x600?text=Gambar+Tidak+Tersedia'">
+                    <span class="absolute top-3 left-3 bg-white/90 px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-sm">${art.kategori}</span>
+                </div>
+                <h3 class="text-lg font-extrabold text-slate-800 leading-tight line-clamp-2 group-hover:navy-text transition-colors">${art.judul}</h3>
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-50">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${art.penulis}</p>
+                    <div class="flex gap-3 text-[10px] font-bold text-slate-300">
+                        <span>👁️ ${art.views || 0}</span>
+                        <span>❤️ ${art.reactions || 0}</span>
                     </div>
-                    <h3 class="text-lg font-extrabold text-slate-800 leading-tight line-clamp-2 group-hover:navy-text transition-colors">${art.judul}</h3>
-                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-50">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${art.penulis}</p>
-                        <div class="flex gap-3 text-[10px] font-bold text-slate-300">
-                            <span>👁️ ${art.views || 0}</span>
-                            <span>❤️ ${art.reactions || 0}</span>
-                        </div>
-                    </div>
-                </div>`).join('');
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderLeaderboard(data) {
+        const list = document.getElementById('leaderboardList');
+        list.innerHTML = data.map((auth) => {
+            const avatarImg = auth.foto_profil ? 
+                `<img src="${getThumb(auth.foto_profil, 'w100')}" class="w-full h-full object-cover">` : 
+                `<span>${auth.avatar}</span>`;
+            return `
+            <div class="rank-card flex items-center gap-3 p-3 bg-slate-50/50 rounded-2xl hover:bg-white transition-colors border border-transparent hover:border-slate-100">
+                <div class="w-10 h-10 navy-bg rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm">${avatarImg}</div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-xs truncate text-slate-800">${auth.nama}</p>
+                    <p class="text-[9px] font-black text-amber-500 uppercase tracking-tighter">${auth.poin} POINTS</p>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function openReadView(id) {
+        const art = globalArticles.find(a => a.id === id);
+        if(!art) return;
+        currentArtId = id;
+        
+        document.getElementById('homeView').classList.add('hidden');
+        document.getElementById('readView').classList.remove('hidden');
+        
+        document.getElementById('readJudul').innerText = art.judul;
+        document.getElementById('readPenulis').innerText = art.penulis;
+        document.getElementById('readIsi').innerHTML = art.isi;
+        document.getElementById('readStats').innerText = `${art.views || 0} Pembaca • ${art.kategori}`;
+        document.getElementById('readPoinPenulis').innerText = `⭐ ${art.poin_penulis || 0} PTS`;
+        document.getElementById('readLikesCount').innerText = art.reactions || 0;
+
+        // --- FIX TOMBOL WA SHARE ---
+        // Menggunakan URL halaman + ID artikel agar link spesifik
+        const currentUrl = window.location.href.split('?')[0]; 
+        const shareLink = `${currentUrl}?read=${id}`; 
+        const waText = encodeURIComponent(`*${art.judul}*\nKarya: ${art.penulis}\n\nBaca selengkapnya di Portal Literasi:\n${shareLink}`);
+        document.getElementById('waShareBtn').onclick = () => window.open(`https://wa.me/?text=${waText}`);
+
+        // Update Avatar di halaman baca
+        const avatarBox = document.getElementById('readAvatarContainer');
+        if(art.foto_profil_penulis) {
+            avatarBox.innerHTML = `<img src="${getThumb(art.foto_profil_penulis, 'w200')}" class="w-full h-full object-cover">`;
+        } else {
+            avatarBox.innerHTML = art.penulis[0].toUpperCase();
         }
 
-        function renderLeaderboard(data) {
-            const list = document.getElementById('leaderboardList');
-            list.innerHTML = data.map((auth) => {
-                const img = auth.foto_profil ? `<img src="${getThumb(auth.foto_profil, 'w100')}" class="w-full h-full object-cover">` : auth.avatar;
-                return `
-                <div class="rank-card flex items-center gap-3 p-3 bg-slate-50/50 rounded-2xl hover:bg-white transition-colors border border-transparent hover:border-slate-100">
-                    <div class="w-10 h-10 navy-bg rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm">${img}</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-bold text-xs truncate text-slate-800">${auth.nama}</p>
-                        <p class="text-[9px] font-black text-amber-500 uppercase tracking-tighter">${auth.poin} POINTS</p>
-                    </div>
-                </div>`;
-            }).join('');
-        }
+        fetch(`${GAS_URL}?action=hitView&id=${id}`);
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
 
-        function renderCategories() {
-            const cats = ["Semua", ...new Set(globalArticles.map(a => a.kategori))];
-            const container = document.getElementById('catContainer');
-            container.innerHTML = cats.map(c => `
-                <button onclick="filterCat('${c}')" class="cat-pill whitespace-nowrap px-6 py-2 rounded-full bg-white border border-slate-200 text-sm font-bold transition-all hover:border-blue-200">${c}</button>
-            `).join('');
-        }
+    function backToHome() {
+        document.getElementById('readView').classList.add('hidden');
+        document.getElementById('homeView').classList.remove('hidden');
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
 
-        // --- Interaction Functions ---
+    function renderCategories() {
+        const cats = ["Semua", ...new Set(globalArticles.map(a => a.kategori))];
+        const container = document.getElementById('catContainer');
+        container.innerHTML = cats.map(c => `
+            <button onclick="filterCat('${c}')" class="cat-pill whitespace-nowrap px-6 py-2 rounded-full bg-white border border-slate-200 text-sm font-bold transition-all hover:border-blue-200">${c}</button>
+        `).join('');
+    }
 
-        function handleSearch() {
-            const q = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = globalArticles.filter(a => a.judul.toLowerCase().includes(q) || a.penulis.toLowerCase().includes(q));
-            renderArticles(filtered);
-        }
+    function filterCat(cat) {
+        document.querySelectorAll('.cat-pill').forEach(b => b.innerText === cat ? b.classList.add('active-cat') : b.classList.remove('active-cat'));
+        renderArticles(cat === "Semua" ? globalArticles : globalArticles.filter(a => a.kategori === cat));
+    }
 
-        function filterCat(cat) {
-            document.querySelectorAll('.cat-pill').forEach(b => b.innerText === cat ? b.classList.add('active-cat') : b.classList.remove('active-cat'));
-            renderArticles(cat === "Semua" ? globalArticles : globalArticles.filter(a => a.kategori === cat));
-        }
-
-        async function openReadView(id) {
-            const art = globalArticles.find(a => a.id === id);
-            if(!art) return;
-            currentArtId = id;
-            
-            document.getElementById('homeView').classList.add('hidden');
-            document.getElementById('readView').classList.remove('hidden');
-            
-            document.getElementById('readJudul').innerText = art.judul;
-            document.getElementById('readPenulis').innerText = art.penulis;
-            document.getElementById('readIsi').innerHTML = art.isi;
-            document.getElementById('readStats').innerText = `${art.views || 0} Pembaca • ${art.kategori}`;
-            document.getElementById('readPoinPenulis').innerText = `⭐ ${art.poin_penulis || 0} PTS`;
-            document.getElementById('readLikesCount').innerText = art.reactions || 0;
-            document.getElementById('likeBtn').disabled = false;
-
-            // Render Foto Profil Penulis di Read View
-            const avatarContainer = document.getElementById('readAvatarContainer');
-            if (art.foto_profil_penulis) { // Pastikan field ini ada di mapArticle Code.gs
-                avatarContainer.innerHTML = `<img src="${getThumb(art.foto_profil_penulis, 'w200')}" class="w-full h-full object-cover">`;
-            } else {
-                avatarContainer.innerHTML = art.penulis[0].toUpperCase();
-            }
-
-            const waText = encodeURIComponent(`"${art.judul}" karya ${art.penulis}\nBaca selengkapnya di Portal Literasi: ${window.location.href}`);
-            document.getElementById('waShareBtn').onclick = () => window.open(`https://wa.me/?text=${waText}`);
-
-            // Trigger hit view ke Apps Script
-            fetch(`${GAS_URL}?action=hitView&id=${id}`);
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        }
-
-        async function handleLike() {
-            const btn = document.getElementById('likeBtn');
-            btn.classList.add('scale-90', 'opacity-50');
-            const res = await fetch(`${GAS_URL}?action=handleLike&id=${currentArtId}`);
-            const data = await res.json();
-            if(data.result === "success") {
-                const count = document.getElementById('readLikesCount');
-                count.innerText = parseInt(count.innerText) + 1;
-                btn.disabled = true;
-                btn.classList.remove('scale-90', 'opacity-50');
-                btn.querySelector('div').classList.add('bg-red-50', 'border-red-200');
-            }
-        }
-
-        function backToHome() {
-            document.getElementById('readView').classList.add('hidden');
-            document.getElementById('homeView').classList.remove('hidden');
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        }
-
-        init();
-    </script>
+    init();
+</script>
 </body>
 </html>
