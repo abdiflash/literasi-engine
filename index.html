@@ -296,19 +296,40 @@
             window.searchTimer = setTimeout(() => loadArticles(true), 600);
         }
 
-        function renderLeaderboard(data) {
-            const list = document.getElementById('leaderboardList');
-            list.innerHTML = data.map(auth => `
-                <div class="rank-card flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-700/30 transition-colors cursor-default border-border-dark">
-                    <div class="w-10 h-10 bg-slate-700 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
-                        ${auth.Link_Foto_Profil ? `<img src="${getThumb(auth.Link_Foto_Profil, 'w100', true)}" class="w-full h-full object-cover">` : auth.avatar}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-bold text-xs truncate text-slate-200">${auth.nama}</p>
-                        <p class="text-[9px] text-blue-400 font-black tracking-tight uppercase">${auth.poin} POINTS</p>
-                    </div>
-                </div>`).join('');
-        }
+        /**
+ * Portal Literasi Komunitas - Perbaikan Mode Dark pada Leaderboard
+ *
+ * Sesuai permintaan, perbaikan ini menghapus garis kuning tipis di sisi kiri kotak nama penulis,
+ * mengubah warna latar belakang kotak nama penulis menjadi biru tua (navy),
+ * dan membuat teks di dalamnya berwarna putih untuk kontras tinggi yang lebih baik.
+ */
+
+// --- PERBAIKAN PADA FUNGSI renderLeaderboard ---
+
+function renderLeaderboard(data) {
+    const list = document.getElementById('leaderboardList');
+    // Ganti bg-slate-50/50 dengan bg-[#044A80] (navy portal) dan tambahkan warna hover
+    // Warna teks nama penulis dan poin diubah menjadi putih
+    list.innerHTML = data.map(auth => `
+        <div class="rank-card flex items-center gap-3 p-3 bg-[#044A80] rounded-2xl border border-transparent hover:bg-white hover:navy-text transition-colors cursor-default">
+            <div class="w-10 h-10 bg-slate-700 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
+                ${auth.Link_Foto_Profil ? `<img src="${getThumb(auth.Link_Foto_Profil, 'w100', true)}" class="w-full h-full object-cover">` : auth.avatar}
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-xs truncate text-white">${auth.nama}</p>
+                <p class="text-[9px] text-white font-black tracking-tight uppercase">${auth.poin} POINTS</p>
+            </div>
+        </div>`).join('');
+}
+
+// --- PERBAIKAN PADA BAGIAN <style> DI HTML ---
+
+// Hapus gaya border-left pada .rank-card:nth-child(...) untuk menghilangkan garis kuning tipis.
+// Hapus atau komentari blok berikut:
+/* .rank-card:nth-child(1) { border-left: 4px solid #fbbf24; }
+.rank-card:nth-child(2) { border-left: 4px solid #94a3b8; }
+.rank-card:nth-child(3) { border-left: 4px solid #b45309; }
+*/
 
         async function openReadView(id) {
             const art = globalArticles.find(a => a.id === id);
