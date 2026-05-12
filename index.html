@@ -302,7 +302,9 @@
             slider.style.transform = `translateX(0)`;
             slider.innerHTML = art.foto.map(f => `<img src="${getThumb(f, 'w1200')}" class="slider-item">`).join('');
             const avatarBox = document.getElementById('readAvatarContainer');
-            avatarBox.innerHTML = art.Link_Foto_Profil ? `<img src="${getThumb(art.Link_Foto_Profil, 'w200', true)}" class="w-full h-full object-cover">` : art.penulis[0].toUpperCase();
+            avatarBox.innerHTML = art.Link_Foto_Profil && art.Link_Foto_Profil !== "" 
+    ? `<img src="${getThumb(art.Link_Foto_Profil, 'w200', true)}" class="w-full h-full object-cover">` 
+    : `<div class="w-full h-full flex items-center justify-center bg-[#044A80] text-white font-bold">${art.penulis[0].toUpperCase()}</div>`;
             fetch(`${GAS_URL}?action=hitView&id=${id}`);
             window.scrollTo({top: 0, behavior: 'smooth'});
         }
