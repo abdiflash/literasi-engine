@@ -18,12 +18,15 @@
         .content-render { font-size: 1.1rem; color: #334155; line-height: 1.8; }
         .content-render h1, .content-render h2 { font-weight: 800; color: #0f172a; margin-top: 1.5rem; }
         .content-render p { margin-bottom: 1.2rem; }
-        .content-render blockquote { border-left: 4px solid #044A80; padding-left: 1rem; font-style: italic; background: #f8fafc; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .content-render blockquote { border-left: 4px solid #044A80; padding-left: 1rem; font-style: italic; background: #f8fafc; padding: 0.5rem 1rem; }
         .content-render img { border-radius: 12px; margin: 1rem 0; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
         
         /* Custom Scrollbar */
         #articleList::-webkit-scrollbar { width: 6px; }
         #articleList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .animate-spin-slow { animation: spin 2s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -55,7 +58,7 @@
                     </h2>
                 </div>
                 
-                <div id="loadingList" class="flex flex-col items-center justify-center py-10 space-y-3">
+                <div id="loadingList" class="hidden flex flex-col items-center justify-center py-10 space-y-3">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#044A80]"></div>
                     <p class="text-sm text-slate-400 italic">Menghubungkan ke server...</p>
                 </div>
@@ -92,7 +95,7 @@
                     Memuat konten...
                 </div>
 
-                <div class="flex flex-col md:flex-row gap-4 mt-auto">
+                <div class="flex flex-col md:flex-row gap-4 mt-auto pt-6">
                     <button id="btnSetujui" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-5 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
                         <span>✅</span> SETUJUI & PUBLIKASIKAN
                     </button>
@@ -114,7 +117,8 @@
     </div>
 
     <script>
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxx87Qzy4VYYqnXET71EQc5cP_3ax9x4-sgLS8vEssE376fnSiOgfB91590qoBZ0kE-rA/exec"; // Ganti dengan URL Anda
+        // MASUKKAN URL WEB APP ANDA DI SINI
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxx87Qzy4VYYqnXET71EQc5cP_3ax9x4-sgLS8vEssE376fnSiOgfB91590qoBZ0kE-rA/exec"; 
     
         let globalArticles = [];
         let selectedArticleId = null;
@@ -123,16 +127,19 @@
             const listContainer = document.getElementById('articleList');
             const loader = document.getElementById('loadingList');
             const badge = document.getElementById('countBadge');
+            const refreshIcon = document.getElementById('refreshIcon');
             
             loader.style.display = 'flex';
             listContainer.innerHTML = '';
+            refreshIcon.classList.add('animate-spin-slow');
             
             try {
-                // Menambahkan parameter ?action=searchPublic untuk mengambil data naskah
-                const response = await fetch(`${GAS_WEB_APP_URL}?action=getPending`);
+                // Memanggil action getAdminData sesuai Code.gs
+                const response = await fetch(`${GAS_WEB_APP_URL}?action=getAdminData`);
                 const result = await response.json();
                 
                 loader.style.display = 'none';
+                refreshIcon.classList.remove('animate-spin-slow');
 
                 if(result.result === "success") {
                     globalArticles = result.data;
@@ -141,31 +148,33 @@
                     if(globalArticles.length === 0) {
                         listContainer.innerHTML = `
                             <div class="text-center py-10">
-                                <p class="text-slate-400 italic text-sm">Tidak ada naskah baru.</p>
+                                <p class="text-slate-400 italic text-sm">Tidak ada naskah dengan status PENDING.</p>
                             </div>`;
                         return;
                     }
 
                     globalArticles.forEach(art => {
                         const div = document.createElement('div');
-                        div.className = "p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-all group";
+                        div.className = "p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-all group mb-3";
                         div.onclick = () => openArticle(art.id);
                         div.innerHTML = `
                             <div class="flex justify-between items-start mb-1">
                                 <p class="text-[9px] font-bold text-blue-600 uppercase tracking-tighter">${art.kategori}</p>
-                                <p class="text-[9px] text-slate-400">${art.id.split('-')[1] || ''}</p>
+                                <p class="text-[9px] text-slate-400">${art.id || ''}</p>
                             </div>
-                            <h3 class="font-bold text-slate-800 line-clamp-2 leading-tight group-hover:navy-text">${art.judul}</h3>
+                            <h3 class="font-bold text-slate-800 line-clamp-2 leading-tight group-hover:text-blue-700">${art.judul}</h3>
                             <div class="flex justify-between items-center mt-3">
-                                <p class="text-[10px] text-slate-500 font-medium font-bold">${art.penulis}</p>
-                                <span class="text-[10px] text-slate-400">➡️</span>
+                                <p class="text-[10px] text-slate-500 font-bold">${art.penulis}</p>
+                                <span class="text-[10px] text-slate-400 group-hover:translate-x-1 transition-transform">➡️</span>
                             </div>
                         `;
                         listContainer.appendChild(div);
                     });
                 }
             } catch (err) {
-                loader.innerHTML = '<span class="text-red-500 text-xs">Gagal terhubung ke database.</span>';
+                console.error(err);
+                loader.innerHTML = `<span class="text-red-500 text-xs">Error: Gagal memuat data.</span>`;
+                refreshIcon.classList.remove('animate-spin-slow');
             }
         }
 
@@ -181,7 +190,10 @@
             document.getElementById('revID').innerText = art.id;
             document.getElementById('revJudul').innerText = art.judul;
             document.getElementById('revPenulis').innerText = art.penulis;
-            document.getElementById('revTanggal').innerText = new Date(art.tanggal).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+            
+            const tgl = art.tanggal ? new Date(art.tanggal) : null;
+            document.getElementById('revTanggal').innerText = tgl ? tgl.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}) : '-';
+            
             document.getElementById('revSumberFoto').innerText = art.kredit || "Dokumen Pribadi";
             document.getElementById('revIsi').innerHTML = art.isi;
 
@@ -192,7 +204,6 @@
                 fotoArea.classList.remove('hidden');
                 art.foto.forEach(link => {
                     let imageSrc = link;
-                    // Optimasi thumbnail Google Drive
                     let fileIdMatch = link.match(/\/file\/d\/(.+?)\//) || link.match(/id=(.+?)(&|$)/);
                     if (fileIdMatch && fileIdMatch[1]) {
                         imageSrc = `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w800`;
@@ -200,12 +211,15 @@
                     
                     fotoArea.innerHTML += `
                         <div class="flex-shrink-0">
-                            <img src="${imageSrc}" class="h-40 w-64 object-cover rounded-2xl border-2 border-white shadow-md bg-slate-200">
+                            <img src="${imageSrc}" class="h-40 w-64 object-cover rounded-2xl border-2 border-white shadow-md bg-slate-200" onerror="this.src='https://placehold.co/600x400?text=Gambar+Tidak+Tersedia'">
                         </div>`;
                 });
             } else {
                 fotoArea.classList.add('hidden');
             }
+            
+            // Scroll detail ke atas
+            document.getElementById('reviewArea').scrollTop = 0;
         }
 
         async function updateStatus(newStatus) {
@@ -214,36 +228,49 @@
 
             const btnS = document.getElementById('btnSetujui');
             const btnT = document.getElementById('btnTolak');
+            const originalS = btnS.innerHTML;
+            
             btnS.disabled = true; btnT.disabled = true;
-            btnS.innerText = "Processing...";
+            btnS.innerText = "Memproses...";
 
             try {
+                // Sesuai dengan fungsi updateArticleStatus(data) di Code.gs
                 const response = await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
+                    mode: 'no-cors', // Penting untuk Apps Script POST
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: "updateStatus",
-                        articleId: selectedArticleId,
+                        id: selectedArticleId, 
                         status: newStatus
                     })
                 });
 
-                // Karena mode: no-cors di fetch GAS, kita asumsikan sukses jika fetch selesai
-                alert(`Naskah telah ${newStatus === 'PUBLISHED' ? 'Diterbitkan!' : 'Ditolak!'}`);
+                // Karena no-cors, kita tidak bisa baca response body, 
+                // tapi kita asumsikan sukses jika tidak masuk ke catch.
+                alert(`Permintaan terkirim: Naskah di-${newStatus}`);
+                
+                // Reset View
                 document.getElementById('emptyArea').classList.remove('hidden');
                 document.getElementById('reviewArea').classList.add('hidden');
-                loadData(); 
+                selectedArticleId = null;
+                
+                // Refresh data setelah jeda singkat agar spreadsheet sempat update
+                setTimeout(loadData, 1500);
 
             } catch (err) {
-                alert("Gagal memperbarui status.");
+                alert("Terjadi gangguan koneksi.");
+                console.error(err);
             } finally {
                 btnS.disabled = false; btnT.disabled = false;
-                btnS.innerHTML = "<span>✅</span> SETUJUI & PUBLIKASIKAN";
+                btnS.innerHTML = originalS;
             }
         }
 
         document.getElementById('btnSetujui').addEventListener('click', () => updateStatus('PUBLISHED'));
         document.getElementById('btnTolak').addEventListener('click', () => updateStatus('REJECTED'));
 
+        // Load data saat pertama kali buka
         window.onload = loadData;
     </script>
 </body>
