@@ -114,7 +114,8 @@
         <div class="max-w-3xl mx-auto px-6 py-12">
             <div class="flex justify-between items-center mb-8">
                 <button onclick="backToHome()" class="font-bold text-xs text-slate-400 hover:navy-text">← KEMBALI</button>
-                <button id="waShareBtn" class="bg-green-500 text-white px-5 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-md hover:bg-green-600 transition-all">Bagikan ke WA</button>
+                
+                <button id="waShareBtn" class="active:scale-95 bg-green-500 text-white px-5 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-md hover:bg-green-600 transition-all">Bagikan ke WA</button>
             </div>
 
             <div class="slider-wrapper mb-10 group">
@@ -333,6 +334,21 @@
         }
 
         init();
+
+        // Tambahkan fungsi ini di dalam bagian <script>
+        document.getElementById('waShareBtn').addEventListener('click', () => {
+        const judul = document.getElementById('readJudul').innerText;
+        const urlSekarang = window.location.href; // Ini akan mengambil URL portalmu
+    
+        // Pesan yang akan dikirim
+        const pesan = `Baca tulisan menarik ini: *${judul}*\n\nLihat selengkapnya di: ${urlSekarang}`;
+    
+        // Link API WhatsApp
+        const waUrl = `https://wa.me/?text=${encodeURIComponent(pesan)}`;
+    
+        // Buka di tab baru
+        window.open(waUrl, '_blank');
+        });
     </script>
 </body>
 </html>
