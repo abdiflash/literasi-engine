@@ -7,9 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Konfigurasi Warna Dark Mode Utama */
         :root { 
-            --navy-light: #38bdf8; /* Biru cerah untuk aksen di dark mode */
+            --navy-light: #38bdf8; 
             --bg-dark: #0f172a; 
             --card-dark: #1e293b;
             --border-dark: #334155;
@@ -26,12 +25,10 @@
         .navy-text { color: var(--navy-light); }
         .glass-nav { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-dark); }
         
-        /* Utility */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .active-cat { background-color: var(--navy-light) !important; color: #0f172a !important; box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.3); }
         
-        /* Font Size Controls */
         .fs-small { font-size: 0.95rem !important; line-height: 1.6 !important; }
         .fs-normal { font-size: 1.15rem !important; line-height: 1.8 !important; }
         .fs-large { font-size: 1.4rem !important; line-height: 1.9 !important; }
@@ -39,17 +36,23 @@
         .content-render { transition: all 0.2s ease; color: #cbd5e1; }
         .content-render h2 { font-weight: 800; font-size: 1.75rem; margin-top: 2rem; color: #f8fafc; }
         
-        /* Cards */
         .article-card { background: var(--card-dark); border: 1px solid var(--border-dark); }
-        .rank-card { background: #1e293b; border-left: 4px solid transparent; }
-        .rank-card:nth-child(1) { border-left-color: #fbbf24; }
-        .rank-card:nth-child(2) { border-left-color: #94a3b8; }
-        .rank-card:nth-child(3) { border-left-color: #b45309; }
+        
+        /* PERBAIKAN: Kotak Nama Leaderboard (Abu-abu Gelap & Tanpa List Kuning) */
+        .rank-card { 
+            background: #1e293b; /* Abu-abu gelap */
+            border: 1px solid var(--border-dark); 
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .rank-card:hover {
+            background: #334155;
+            border-color: var(--navy-light);
+        }
         
         .article-card img { transition: transform 0.5s ease; }
         .article-card:hover img { transform: scale(1.05); }
 
-        /* Slider */
         .slider-wrapper { position: relative; overflow: hidden; border-radius: 2.5rem; background: #1e293b; aspect-ratio: 16/9; }
         .slider-container { display: flex; transition: transform 0.5s ease-in-out; height: 100%; }
         .slider-item { min-width: 100%; height: 100%; object-fit: cover; }
@@ -87,11 +90,7 @@
     <main id="homeView">
         <header class="max-w-4xl mx-auto px-6 pt-12 text-center">
             <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4 text-white">Jendela <span class="navy-text">Inspirasi</span></h1>
-            
-            <div id="catContainer" class="flex gap-3 overflow-x-auto no-scrollbar py-6 justify-start md:justify-center">
-                <button class="cat-pill active-cat whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 border border-slate-700 text-sm font-bold transition-all">Memuat...</button>
-            </div>
-
+            <div id="catContainer" class="flex gap-3 overflow-x-auto no-scrollbar py-6 justify-start md:justify-center"></div>
             <div class="relative max-w-xl mx-auto mt-4 px-4">
                 <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari karya atau penulis..." class="w-full bg-slate-800 border border-slate-700 text-white py-4 px-6 rounded-2xl focus:ring-2 focus:ring-[#38bdf8] outline-none transition-all">
             </div>
@@ -99,9 +98,9 @@
 
         <section class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-4 gap-10">
             <aside class="lg:col-span-1 order-2 lg:order-1">
-                <div class="bg-slate-800/50 p-6 rounded-[2.5rem] border border-slate-700 sticky top-28">
+                <div class="bg-slate-800/30 p-6 rounded-[2.5rem] border border-slate-700 sticky top-28">
                     <h2 class="font-black text-lg mb-6 flex items-center gap-2 text-white">🏆 TOP PENULIS</h2>
-                    <div id="leaderboardList" class="space-y-4">
+                    <div id="leaderboardList" class="space-y-3">
                         <div class="animate-pulse flex space-x-4"><div class="rounded-full bg-slate-700 h-10 w-10"></div><div class="flex-1 space-y-3 py-1"><div class="h-2 bg-slate-700 rounded"></div></div></div>
                     </div>
                 </div>
@@ -115,18 +114,13 @@
                     </span>
                     <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest loading-pulse">Sinkronisasi Server...</span>
                 </div>
-
                 <div id="loading" class="text-center py-20 text-slate-500 font-bold hidden">
                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#38bdf8] mb-4"></div>
                     <p>Menyusun rak buku...</p>
                 </div>
-
                 <div id="articleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
-                
                 <div id="moreContainer" class="text-center mt-12 hidden">
-                    <button onclick="loadMore()" class="group bg-transparent border-2 border-slate-700 text-slate-300 font-bold py-3 px-10 rounded-2xl hover:border-[#38bdf8] hover:text-[#38bdf8] transition-all">
-                        Tampilkan Lebih Banyak
-                    </button>
+                    <button onclick="loadMore()" class="group bg-transparent border-2 border-slate-700 text-slate-300 font-bold py-3 px-10 rounded-2xl hover:border-[#38bdf8] hover:text-[#38bdf8] transition-all">Tampilkan Lebih Banyak</button>
                 </div>
             </div>
         </section>
@@ -169,9 +163,7 @@
                     <div id="readPoinPenulis" class="absolute right-0 top-2 bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-[10px] font-black italic border border-blue-500/20"></div>
                 </div>
             </header>
-
             <article id="readIsi" class="content-render fs-normal mb-12"></article>
-
             <div class="border-t border-slate-800 pt-10 text-center">
                 <button onclick="handleLike()" id="likeBtn" class="group flex flex-col items-center mx-auto transition-all">
                     <div class="w-20 h-20 rounded-full border-2 border-slate-700 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:border-red-500/50 transition-all bg-slate-800/30">❤️</div>
@@ -209,6 +201,21 @@
             loadArticles(true);
         }
 
+        /* PERBAIKAN: Fungsi Leaderboard Baru */
+        function renderLeaderboard(data) {
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = data.map(auth => `
+                <div class="rank-card flex items-center gap-3 p-3">
+                    <div class="w-10 h-10 bg-slate-700 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0 border border-slate-600">
+                        ${auth.Link_Foto_Profil ? `<img src="${getThumb(auth.Link_Foto_Profil, 'w100', true)}" class="w-full h-full object-cover">` : auth.avatar}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-xs truncate text-white">${auth.nama}</p>
+                        <p class="text-[9px] text-orange-400 font-black tracking-tight uppercase">${auth.poin} POINTS</p>
+                    </div>
+                </div>`).join('');
+        }
+
         async function loadArticles(isInitial = false) {
             const loading = document.getElementById('loading');
             const moreBtn = document.getElementById('moreContainer');
@@ -232,7 +239,6 @@
                     globalArticles = isInitial ? res.data : [...globalArticles, ...res.data];
                     if(isInitial && res.categories) renderCategories(res.categories);
                     renderArticles(res.data, !isInitial);
-                    
                     if(res.hasMore) {
                         moreBtn.classList.remove('hidden');
                         currentOffset += LIMIT;
@@ -240,9 +246,8 @@
                         moreBtn.classList.add('hidden');
                     }
                 }
-            } catch(e) { 
-                console.error("Load failed", e);
-            } finally {
+            } catch(e) { console.error("Load failed", e); } 
+            finally {
                 setTimeout(() => {
                     serverStatus.classList.add('hidden');
                     loading.classList.add('hidden');
@@ -275,61 +280,14 @@
         }
 
         function loadMore() { loadArticles(false); }
-
         function renderCategories(cats) {
             const container = document.getElementById('catContainer');
             container.innerHTML = cats.map(c => `
-                <button onclick="filterCat('${c}')" class="cat-pill whitespace-nowrap px-6 py-2 rounded-full border border-slate-700 text-sm font-bold transition-all ${c === activeCategory ? 'active-cat' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">
-                    ${c}
-                </button>
+                <button onclick="filterCat('${c}')" class="cat-pill whitespace-nowrap px-6 py-2 rounded-full border border-slate-700 text-sm font-bold transition-all ${c === activeCategory ? 'active-cat' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">${c}</button>
             `).join('');
         }
-
-        function filterCat(cat) {
-            if(activeCategory === cat) return;
-            activeCategory = cat;
-            loadArticles(true);
-        }
-
-        function handleSearch() {
-            clearTimeout(window.searchTimer);
-            window.searchTimer = setTimeout(() => loadArticles(true), 600);
-        }
-
-        /**
- * Portal Literasi Komunitas - Perbaikan Mode Dark pada Leaderboard
- *
- * Sesuai permintaan, perbaikan ini menghapus garis kuning tipis di sisi kiri kotak nama penulis,
- * mengubah warna latar belakang kotak nama penulis menjadi biru tua (navy),
- * dan membuat teks di dalamnya berwarna putih untuk kontras tinggi yang lebih baik.
- */
-
-// --- PERBAIKAN PADA FUNGSI renderLeaderboard ---
-
-function renderLeaderboard(data) {
-    const list = document.getElementById('leaderboardList');
-    // Ganti bg-slate-50/50 dengan bg-[#044A80] (navy portal) dan tambahkan warna hover
-    // Warna teks nama penulis dan poin diubah menjadi putih
-    list.innerHTML = data.map(auth => `
-        <div class="rank-card flex items-center gap-3 p-3 bg-[#044A80] rounded-2xl border border-transparent hover:bg-white hover:navy-text transition-colors cursor-default">
-            <div class="w-10 h-10 bg-slate-700 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
-                ${auth.Link_Foto_Profil ? `<img src="${getThumb(auth.Link_Foto_Profil, 'w100', true)}" class="w-full h-full object-cover">` : auth.avatar}
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="font-bold text-xs truncate text-white">${auth.nama}</p>
-                <p class="text-[9px] text-white font-black tracking-tight uppercase">${auth.poin} POINTS</p>
-            </div>
-        </div>`).join('');
-}
-
-// --- PERBAIKAN PADA BAGIAN <style> DI HTML ---
-
-// Hapus gaya border-left pada .rank-card:nth-child(...) untuk menghilangkan garis kuning tipis.
-// Hapus atau komentari blok berikut:
-/* .rank-card:nth-child(1) { border-left: 4px solid #fbbf24; }
-.rank-card:nth-child(2) { border-left: 4px solid #94a3b8; }
-.rank-card:nth-child(3) { border-left: 4px solid #b45309; }
-*/
+        function filterCat(cat) { if(activeCategory === cat) return; activeCategory = cat; loadArticles(true); }
+        function handleSearch() { clearTimeout(window.searchTimer); window.searchTimer = setTimeout(() => loadArticles(true), 600); }
 
         async function openReadView(id) {
             const art = globalArticles.find(a => a.id === id);
@@ -371,15 +329,9 @@ function renderLeaderboard(data) {
         function changeFontSize(size) {
             const article = document.getElementById('readIsi');
             const btns = document.querySelectorAll('[onclick^="changeFontSize"]');
-            
-            // Reset classes
             article.classList.remove('fs-small', 'fs-normal', 'fs-large');
             btns.forEach(b => b.classList.remove('border', 'border-blue-500'));
-            
-            // Set new class
             article.classList.add(`fs-${size}`);
-            
-            // Add border to active button
             event.currentTarget.classList.add('border', 'border-blue-500');
         }
 
@@ -406,8 +358,7 @@ function renderLeaderboard(data) {
 
         document.getElementById('waShareBtn').addEventListener('click', () => {
             const judul = document.getElementById('readJudul').innerText;
-            const urlSekarang = window.location.href;
-            const pesan = `Baca tulisan menarik ini: *${judul}*\n\nLihat selengkapnya di: ${urlSekarang}`;
+            const pesan = `Baca tulisan menarik ini: *${judul}*\n\nLihat selengkapnya di: ${window.location.href}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(pesan)}`, '_blank');
         });
 
