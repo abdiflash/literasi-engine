@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Literasi Komunitas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --navy-light: #38bdf8; 
+            --bg-dark: #0f172a; 
+            --card-dark: #1e293b;
+            --border-dark: #334155;
+        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-dark); color: #f1f5f9; }
+        .navy-bg { background-color: var(--navy-light); }
+        .navy-text { color: var(--navy-light); }
+        .glass-nav { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-dark); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .active-cat { background-color: var(--navy-light) !important; color: #0f172a !important; box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.3); }
+        .content-render h2 { font-weight: 800; font-size: 1.75rem; margin-top: 2rem; color: #f8fafc; }
+        .article-card { background: var(--card-dark); border: 1px solid var(--border-dark); transition: all 0.3s ease; }
+        .rank-card { background: #1e293b; border: 1px solid var(--border-dark); border-radius: 1rem; transition: all 0.3s ease; }
+        .slider-wrapper { position: relative; overflow: hidden; border-radius: 2.5rem; background: #1e293b; aspect-ratio: 16/9; }
+        .slider-container { display: flex; transition: transform 0.5s ease-in-out; height: 100%; }
+        .slider-item { min-width: 100%; height: 100%; object-fit: cover; }
+        .loading-pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    </style>
+</head>
+<body class="selection:bg-blue-500/30">
+
+    <nav class="glass-nav sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+            <div class="text-xl md:text-2xl font-black navy-text tracking-tighter cursor-pointer" onclick="location.reload()">
+                PORTAL<span class="text-slate-500 font-light text-base md:text-xl italic">LITERASI</span>
+            </div>
+            <div class="flex gap-2">
+                <a href="daftar.html" class="bg-slate-800 text-white font-bold py-2 px-4 rounded-xl text-xs hover:bg-slate-700 transition-all border border-slate-700">Daftar</a>
+                <a href="tulis.html" class="navy-bg text-slate-900 font-bold py-2 px-4 rounded-xl text-xs shadow-lg shadow-blue-500/20">Kirim Naskah</a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="homeView">
+        <header class="max-w-4xl mx-auto px-6 pt-12 text-center">
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4 text-white">Jendela <span class="navy-text">Inspirasi</span></h1>
+            <div id="catContainer" class="flex gap-3 overflow-x-auto no-scrollbar py-6 justify-start md:justify-center"></div>
+            <div class="relative max-w-xl mx-auto mt-4 px-4">
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari karya atau penulis..." class="w-full bg-slate-800 border border-slate-700 text-white py-4 px-6 rounded-2xl focus:ring-2 focus:ring-[#38bdf8] outline-none transition-all">
+            </div>
+        </header>
+
+        <section class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-4 gap-10">
+            <aside class="lg:col-span-1 order-2 lg:order-1">
+                <div class="bg-slate-800/30 p-6 rounded-[2.5rem] border border-slate-700 sticky top-28">
+                    <h2 class="font-black text-lg mb-6 flex items-center gap-2 text-white">🏆 TOP PENULIS</h2>
+                    <div id="leaderboardList" class="space-y-3">
+                        <div class="animate-pulse flex space-x-4"><div class="rounded-full bg-slate-700 h-10 w-10"></div><div class="h-2 bg-slate-700 rounded w-full"></div></div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="lg:col-span-3 order-1 lg:order-2">
+                <div id="serverStatus" class="mb-4 flex items-center gap-2 px-2 hidden">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest loading-pulse">Sinkronisasi Server...</span>
+                </div>
+                <div id="articleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+                <div id="moreContainer" class="text-center mt-12 hidden">
+                    <button onclick="loadMore()" class="bg-transparent border-2 border-slate-700 text-slate-300 font-bold py-3 px-10 rounded-2xl hover:border-[#38bdf8] hover:text-[#38bdf8] transition-all">Muat Lebih Banyak</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <main id="readView" class="hidden pb-20">
+        <div class="max-w-3xl mx-auto px-6 py-12">
+            <button onclick="backToHome()" class="mb-8 font-bold text-xs text-slate-400 hover:text-white transition-colors">← KEMBALI</button>
+            
+            <div class="slider-wrapper mb-10 border border-slate-700">
+                <div id="imageSlider" class="slider-container"></div>
+                <p id="readKredit" class="absolute bottom-4 left-6 text-[10px] bg-black/70 text-white px-3 py-1 rounded-full backdrop-blur-sm z-10 border border-white/10"></p>
+            </div>
+
+            <header class="mb-10">
+                <h1 id="readJudul" class="text-4xl md:text-5xl font-black text-white leading-tight mb-6 tracking-tighter"></h1>
+                <div class="flex items-center gap-4 border-b border-slate-800 pb-8 relative">
+                    <div id="readAvatarContainer" class="w-14 h-14 overflow-hidden rounded-2xl bg-slate-700 flex items-center justify-center text-white font-bold text-2xl border border-slate-600"></div>
+                    <div class="flex-1">
+                        <p id="readPenulis" class="font-bold text-white text-lg"></p>
+                        <p id="readStats" class="text-xs text-slate-500 font-bold uppercase tracking-widest"></p>
+                    </div>
+                </div>
+            </header>
+            <article id="readIsi" class="content-render text-lg leading-relaxed text-slate-300 mb-12"></article>
+        </div>
+    </main>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxx87Qzy4VYYqnXET71EQc5cP_3ax9x4-sgLS8vEssE376fnSiOgfB91590qoBZ0kE-rA/exec";
+        let globalArticles = [];
+        let currentOffset = 0;
+        const LIMIT = 6;
+        let activeCategory = "Semua";
+
+        // FUNGSI THUMBNAIL & FOTO PROFIL (FIXED)
+        function getThumb(url, size = "w1200", isProfile = false) {
+            if (!url || url === "" || url === "null") {
+                return isProfile ? null : "https://via.placeholder.com/800x450/1e293b/64748b?text=No+Image";
+            }
+            const match = url.match(/[-\w]{25,}/);
+            if (match) {
+                return `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}`;
+            }
+            return url;
+        }
+
+        async function init() {
+            // Load Leaderboard
+            fetch(`${GAS_URL}?action=getLeaderboard`)
+                .then(r => r.json())
+                .then(res => { if(res.result === "success") renderLeaderboard(res.data); });
+            
+            loadArticles(true);
+        }
+
+        function renderLeaderboard(data) {
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = data.map(auth => {
+                const foto = getThumb(auth.Link_Foto_Profil, "w100", true);
+                const initial = auth.nama ? auth.nama.charAt(0).toUpperCase() : "?";
+                return `
+                <div class="rank-card flex items-center gap-3 p-3">
+                    <div class="w-10 h-10 bg-slate-700 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0 border border-slate-600">
+                        ${foto ? `<img src="${foto}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/40'">` : `<span>${initial}</span>`}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-xs truncate text-white uppercase">${auth.nama}</p>
+                        <p class="text-[9px] text-orange-400 font-black tracking-tight uppercase">${auth.poin} POINTS</p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function loadArticles(isInitial = false) {
+            const serverStatus = document.getElementById('serverStatus');
+            if(isInitial) { currentOffset = 0; globalArticles = []; document.getElementById('articleGrid').innerHTML = ''; }
+            serverStatus.classList.remove('hidden');
+
+            const q = document.getElementById('searchInput').value;
+            const url = `${GAS_URL}?action=searchPublic&limit=${LIMIT}&offset=${currentOffset}&category=${encodeURIComponent(activeCategory)}&q=${encodeURIComponent(q)}`;
+
+            try {
+                const res = await fetch(url).then(r => r.json());
+                if(res.result === "success") {
+                    globalArticles = isInitial ? res.data : [...globalArticles, ...res.data];
+                    if(isInitial && res.categories) renderCategories(res.categories);
+                    renderArticles(res.data, !isInitial);
+                    document.getElementById('moreContainer').classList.toggle('hidden', !res.hasMore);
+                    if(res.hasMore) currentOffset += LIMIT;
+                }
+            } catch(e) { console.error(e); } 
+            finally { serverStatus.classList.add('hidden'); }
+        }
+
+        function renderArticles(newData, append = false) {
+            const grid = document.getElementById('articleGrid');
+            const html = newData.map(art => {
+                const fotoUtama = Array.isArray(art.foto) ? art.foto[0] : art.foto;
+                const fotoPenulis = getThumb(art.Link_Foto_Profil, "w100", true);
+                const initial = art.penulis ? art.penulis.charAt(0).toUpperCase() : "?";
+
+                return `
+                <div class="article-card group cursor-pointer p-4 rounded-[2rem] transition-all hover:border-[#38bdf8]/50" onclick="openReadView('${art.id}')">
+                    <div class="relative h-52 mb-4 rounded-[1.5rem] overflow-hidden bg-slate-900">
+                        <img src="${getThumb(fotoUtama)}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                        <span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase border border-white/10">${art.kategori}</span>
+                    </div>
+                    <h3 class="text-lg font-extrabold text-slate-100 leading-tight line-clamp-2 group-hover:navy-text transition-colors">${art.judul}</h3>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-700/50">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full overflow-hidden bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white border border-slate-600">
+                                ${fotoPenulis ? `<img src="${fotoPenulis}" class="w-full h-full object-cover">` : initial}
+                            </div>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${art.penulis}</p>
+                        </div>
+                        <div class="flex gap-3 text-[10px] font-bold text-slate-600">
+                            <span>👁️ ${art.views || 0}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            grid.innerHTML = append ? grid.innerHTML + html : html;
+        }
+
+        async function openReadView(id) {
+            const art = globalArticles.find(a => a.id === id);
+            if(!art) return;
+            
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('readView').classList.remove('hidden');
+            document.getElementById('readJudul').innerText = art.judul;
+            document.getElementById('readPenulis').innerText = art.penulis;
+            document.getElementById('readIsi').innerHTML = art.isi;
+            document.getElementById('readStats').innerText = `${art.views || 0} Pembaca • ${art.kategori}`;
+            
+            // Render Foto Profil di Read View
+            const avatarBox = document.getElementById('readAvatarContainer');
+            const fotoPenulis = getThumb(art.Link_Foto_Profil, "w200", true);
+            const initial = art.penulis ? art.penulis.charAt(0).toUpperCase() : "?";
+            avatarBox.innerHTML = fotoPenulis ? `<img src="${fotoPenulis}" class="w-full h-full object-cover">` : initial;
+
+            const slider = document.getElementById('imageSlider');
+            slider.innerHTML = art.foto.map(f => `<img src="${getThumb(f)}" class="slider-item">`).join('');
+            
+            fetch(`${GAS_URL}?action=hitView&id=${id}`);
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function renderCategories(cats) {
+            const container = document.getElementById('catContainer');
+            container.innerHTML = cats.map(c => `
+                <button onclick="filterCat('${c}')" class="px-6 py-2 rounded-full border border-slate-700 text-sm font-bold transition-all ${c === activeCategory ? 'active-cat' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">${c}</button>
+            `).join('');
+        }
+
+        function filterCat(cat) { activeCategory = cat; loadArticles(true); }
+        function handleSearch() { clearTimeout(window.searchTimer); window.searchTimer = setTimeout(() => loadArticles(true), 600); }
+        function backToHome() { document.getElementById('readView').classList.add('hidden'); document.getElementById('homeView').classList.remove('hidden'); }
+        function loadMore() { loadArticles(false); }
+
+        init();
+    </script>
+</body>
+</html>
