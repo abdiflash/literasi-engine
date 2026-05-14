@@ -238,98 +238,112 @@
         }
 
         function openReadView(id) {
-            const art = allArticles.find(a => a.id === id);
-            if (!art) return;
+    const art = allArticles.find(a => a.id === id);
+    if (!art) return;
 
-            document.getElementById('homeView').classList.add('hidden');
-            document.getElementById('readView').classList.remove('hidden');
-            window.scrollTo(0, 0);
+    document.getElementById('homeView').classList.add('hidden');
+    document.getElementById('readView').classList.remove('hidden');
+    window.scrollTo(0, 0);
 
-            document.getElementById('readJudul').innerText = art.judul;
-            document.getElementById('readPenulis').innerText = art.penulis;
-            document.getElementById('readStats').innerText = `${art.views || 0} VIEW • ${art.kategori}`;
-            document.getElementById('readIsi').innerHTML = art.isi.replace(/\n/g, '<br>');
-            
-            // Atur Kredit teks
-            const kreditEl = document.getElementById('readKredit');
-            if (art.kredit && art.kredit.trim() !== "") {
-                kreditEl.innerText = "Sumber/Kredit: " + art.kredit;
-                kreditEl.classList.remove('hidden');
-            } else {
-                kreditEl.classList.add('hidden');
-            }
+    document.getElementById('readJudul').innerText = art.judul;
+    document.getElementById('readPenulis').innerText = art.penulis;
+    document.getElementById('readStats').innerText = `${art.views || 0} VIEW • ${art.kategori}`;
+    document.getElementById('readIsi').innerHTML = art.isi.replace(/\n/g, '<br>');
+    
+    // Atur Kredit teks
+    const kreditEl = document.getElementById('readKredit');
+    if (art.kredit && art.kredit.trim() !== "") {
+        kreditEl.innerText = "Sumber/Kredit: " + art.kredit;
+        kreditEl.classList.remove('hidden');
+    } else {
+        kreditEl.classList.add('hidden');
+    }
 
-            // Validasi Data Video Youtube
-            const tabsEl = document.getElementById('mediaTabs');
-            currentYoutubeId = getYoutubeId(art.youtube);
-            
-            if (currentYoutubeId) {
-                tabsEl.classList.remove('hidden'); // Tampilkan tab jika ada video
-            } else {
-                tabsEl.classList.add('hidden'); // Sembunyikan tab jika data video kosong
-            }
+    // Validasi Data Video Youtube
+    const tabsEl = document.getElementById('mediaTabs');
+    currentYoutubeId = getYoutubeId(art.youtube);
+    
+    if (currentYoutubeId) {
+        tabsEl.classList.remove('hidden'); // Tombol tab AKAN SELALU MUNCUL jika ada video (termasuk di Komik)
+    } else {
+        tabsEl.classList.add('hidden'); // Sembunyikan jika memang tidak ada data video
+    }
 
-            // Reset ke tampilan Foto utama terlebih dahulu
-            switchMedia('foto');
+    // Reset ke tampilan Foto utama terlebih dahulu
+    switchMedia('foto');
 
-            const pin = art.pin?.toString().trim();
-            const avatarImg = authorMap[pin] ? getThumb(authorMap[pin].foto, "w100") : `https://ui-avatars.com/api/?name=${art.penulis}`;
-            document.getElementById('readAvatar').innerHTML = `<img src="${avatarImg}" class="w-full h-full object-cover">`;
+    const pin = art.pin?.toString().trim();
+    const avatarImg = authorMap[pin] ? getThumb(authorMap[pin].foto, "w100") : `https://ui-avatars.com/api/?name=${art.penulis}`;
+    document.getElementById('readAvatar').innerHTML = `<img src="${avatarImg}" class="w-full h-full object-cover">`;
 
-            const mediaBox = document.getElementById('mediaBox');
-            const slider = document.getElementById('imageSlider');
-            const isKomik = art.kategori?.toLowerCase() === 'komik';
+    const mediaBox = document.getElementById('mediaBox');
+    const slider = document.getElementById('imageSlider');
+    const isKomik = art.kategori?.toLowerCase() === 'komik';
 
-            if (isKomik) {
-                mediaBox.classList.add('comic-mode');
-                document.getElementById('prevBtn').classList.add('hidden');
-                document.getElementById('nextBtn').classList.add('hidden');
-                if(currentYoutubeId) tabsEl.classList.add('hidden'); // Khusus komik, sembunyikan switcher agar memanjang normal
-            } else {
-                mediaBox.classList.remove('comic-mode');
-                document.getElementById('prevBtn').classList.toggle('hidden', art.foto.length <= 1);
-                document.getElementById('nextBtn').classList.toggle('hidden', art.foto.length <= 1);
-            }
+    if (isKomik) {
+        mediaBox.classList.add('comic-mode');
+        document.getElementById('prevBtn').classList.add('hidden');
+        document.getElementById('nextBtn').classList.add('hidden');
+        // Baris penyembunyi tab paksa untuk komik di sini sudah dihapus agar tombol foto/video bisa tampil
+    } else {
+        mediaBox.classList.remove('comic-mode');
+        document.getElementById('prevBtn').classList.toggle('hidden', art.foto.length <= 1);
+        document.getElementById('nextBtn').classList.toggle('hidden', art.foto.length <= 1);
+    }
 
-            slider.innerHTML = art.foto.map(f => `
-                <div class="slider-item-container">
-                    <img src="${getThumb(f, 'w1600')}" class="slider-item">
-                </div>
-            `).join('');
-            
-            currentSlide = 0;
-            updateSlider();
-            fetch(`${GAS_URL}?action=hitView&id=${id}`);
-        }
-
+    slider.innerHTML = art.foto.map(f => `
+        <div class="slider-item-container">
+            <img src="${getThumb(f, 'w1600')}" class="slider-item">
+        </div>
+    `).join('');
+    
+    currentSlide = 0;
+    updateSlider();
+    fetch(`${GAS_URL}?action=hitView&id=${id}`);
+}
         // Fungsi Switcher Tab Media Pintar
-        function switchMedia(type) {
-            const btnFoto = document.getElementById('tabFoto');
-            const btnVideo = document.getElementById('tabVideo');
-            const contentSlider = document.getElementById('sliderContent');
-            const contentVideo = document.getElementById('videoContent');
-            const youtubeContainer = document.getElementById('readYoutube');
+       function switchMedia(type) {
+    const btnFoto = document.getElementById('tabFoto');
+    const btnVideo = document.getElementById('tabVideo');
+    const contentSlider = document.getElementById('sliderContent');
+    const contentVideo = document.getElementById('videoContent');
+    const youtubeContainer = document.getElementById('readYoutube');
+    const mediaBox = document.getElementById('mediaBox');
 
-            if (type === 'video' && currentYoutubeId) {
-                btnVideo.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-active";
-                btnFoto.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-inactive";
-                
-                contentSlider.classList.add('hidden');
-                contentVideo.classList.remove('hidden');
-                
-                // Load Iframe YouTube pas diklik saja agar performa web enteng
-                youtubeContainer.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${currentYoutubeId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-            } else {
-                // Tampilan Default (Foto)
-                btnFoto.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-active";
-                btnVideo.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-inactive";
-                
-                contentSlider.classList.remove('hidden');
-                contentVideo.classList.add('hidden');
-                youtubeContainer.innerHTML = ''; // Hentikan video jika pengguna kembali ke tab foto
-            }
+    if (type === 'video' && currentYoutubeId) {
+        btnVideo.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-active";
+        btnFoto.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-inactive";
+        
+        contentSlider.classList.add('hidden');
+        contentVideo.classList.remove('hidden');
+        
+        // Jika sedang di mode komik, berikan aspek rasio box video yang pas saat tab video aktif
+        if(mediaBox.classList.contains('comic-mode')) {
+            mediaBox.style.aspectRatio = "16/10";
+            mediaBox.style.background = "#020617";
+            mediaBox.style.border = "1px solid var(--border-dark)";
+            mediaBox.style.borderRadius = "2rem";
+            mediaBox.style.overflow = "hidden";
         }
 
+        youtubeContainer.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${currentYoutubeId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    } else {
+        btnFoto.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-active";
+        btnVideo.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-inactive";
+        
+        contentSlider.classList.remove('hidden');
+        contentVideo.classList.add('hidden');
+        youtubeContainer.innerHTML = ''; 
+
+        // Kembalikan ke format gulir vertikal polos khas komik jika kembali ke tab foto
+        if(mediaBox.classList.contains('comic-mode')) {
+            mediaBox.style.aspectRatio = "auto";
+            mediaBox.style.background = "transparent";
+            mediaBox.style.border = "none";
+            mediaBox.style.overflow = "visible";
+        }
+    }
+}
         function moveSlide(step) {
             const slides = document.querySelectorAll('.slider-item-container');
             currentSlide = (currentSlide + step + slides.length) % slides.length;
