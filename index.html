@@ -131,11 +131,14 @@
             return match ? `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}` : url;
         }
 
-        // Fungsi mengekstrak ID YouTube dari link
+        // Fungsi Ekstraksi ID YouTube yang Dioptimalkan (Mendukung link penuh & ID murni)
         function getYoutubeId(url) {
             if (!url) return null;
+            const str = url.toString().trim();
+            if (str.length === 11) return str; // Jika user langsung memasukkan 11 karakter ID video
+            
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
+            const match = str.match(regExp);
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
@@ -218,7 +221,7 @@
             document.getElementById('readStats').innerText = `${art.views || 0} VIEW • ${art.kategori}`;
             document.getElementById('readIsi').innerHTML = art.isi.replace(/\n/g, '<br>');
             
-            // Logika teks Kredit
+            // Logika Teks Kredit Polos
             const kreditEl = document.getElementById('readKredit');
             if (art.kredit && art.kredit.trim() !== "") {
                 kreditEl.innerText = "Sumber/Kredit: " + art.kredit;
@@ -227,7 +230,7 @@
                 kreditEl.classList.add('hidden');
             }
 
-            // Logika Render Video YouTube
+            // Logika Deteksi dan Pemutar Video YouTube
             const youtubeEl = document.getElementById('readYoutube');
             const ytId = getYoutubeId(art.youtube);
             if (ytId) {
