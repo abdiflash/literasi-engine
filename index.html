@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Literasi Komunitas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --navy-light: #38bdf8; 
+            --bg-dark: #0f172a; 
+            --card-dark: #1e293b;
+            --border-dark: #334155;
+        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-dark); color: #f1f5f9; }
+        .navy-bg { background-color: var(--navy-light); }
+        .navy-text { color: var(--navy-light); }
+        .glass-nav { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-dark); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .active-cat { background-color: var(--navy-light) !important; color: #0f172a !important; box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.3); }
+        
+        .content-render h2 { font-weight: 800; font-size: 1.75rem; margin-top: 2rem; color: #f8fafc; }
+        .article-card { background: var(--card-dark); border: 1px solid var(--border-dark); transition: all 0.3s ease; }
+        .rank-card { background: #1e293b; border: 1px solid var(--border-dark); border-radius: 1rem; transition: all 0.3s ease; }
+        
+        /* LAYOUT SLIDER NORMAL (Landscape / Esai / Opini) */
+        .slider-wrapper { position: relative; overflow: hidden; border-radius: 2.5rem; background: #090d16; aspect-ratio: 16/9; transition: all 0.4s ease; }
+        .slider-container { display: flex; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; width: 100%; }
+        .slider-item-container { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #090d16; overflow: hidden; }
+        .slider-item { max-width: 100%; max-height: 100%; object-fit: contain; width: auto; height: auto; }
+        
+        /* EXTRA STYLE: MODE WEBTOON/KOMIK (Scroll Vertikal agar teks terbaca jelas) */
+        .slider-wrapper.comic-mode { aspect-ratio: auto !important; height: auto !important; overflow: visible !important; background: transparent !important; border: none !important; border-radius: 0; }
+        .slider-wrapper.comic-mode .slider-container { flex-direction: column !important; gap: 1.5rem; transform: none !important; height: auto !important; }
+        .slider-wrapper.comic-mode .slider-item-container { width: 100% !important; height: auto !important; border-radius: 1.5rem; border: 1px solid var(--border-dark); }
+        .slider-wrapper.comic-mode .slider-item { max-width: 100% !important; max-height: none !important; width: 100% !important; height: auto !important; object-fit: contain; }
+
+        .loading-pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    </style>
+</head>
+<body class="selection:bg-blue-500/30">
+
+    <nav class="glass-nav sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+            <div class="text-xl md:text-2xl font-black navy-text tracking-tighter cursor-pointer" onclick="location.reload()">
+                PORTAL<span class="text-slate-500 font-light text-base md:text-xl italic">LITERASI</span>
+            </div>
+            <div class="flex gap-2">
+                <a href="daftar.html" class="bg-slate-800 text-white font-bold py-2 px-4 rounded-xl text-xs hover:bg-slate-700 transition-all border border-slate-700">Daftar</a>
+                <a href="tulis.html" class="navy-bg text-slate-900 font-bold py-2 px-4 rounded-xl text-xs shadow-lg shadow-blue-500/20">Kirim Naskah</a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="homeView">
+        <header class="max-w-4xl mx-auto px-6 pt-12 text-center">
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4 text-white">Jendela <span class="navy-text">Inspirasi</span></h1>
+            <div id="catContainer" class="flex gap-3 overflow-x-auto no-scrollbar py-6 justify-start md:justify-center"></div>
+            <div class="relative max-w-xl mx-auto mt-4 px-4">
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari karya atau penulis..." class="w-full bg-slate-800 border border-slate-700 text-white py-4 px-6 rounded-2xl focus:ring-2 focus:ring-[#38bdf8] outline-none transition-all">
+            </div>
+        </header>
+
+        <section class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-4 gap-10">
+            <aside class="lg:col-span-1 order-2 lg:order-1">
+                <div class="bg-slate-800/30 p-6 rounded-[2.5rem] border border-slate-700 sticky top-28">
+                    <h2 class="font-black text-lg mb-6 flex items-center gap-2 text-white">🏆 TOP PENULIS</h2>
+                    <div id="leaderboardList" class="space-y-3">
+                        <div class="animate-pulse flex space-x-4"><div class="rounded-full bg-slate-700 h-10 w-10"></div><div class="h-2 bg-slate-700 rounded w-full"></div></div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="lg:col-span-3 order-1 lg:order-2">
+                <div id="serverStatus" class="mb-4 flex items-center gap-2 px-2 hidden">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest loading-pulse">Sinkronisasi Server...</span>
+                </div>
+                <div id="articleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+                <div id="moreContainer" class="text-center mt-12 hidden">
+                    <button onclick="loadMore()" class="bg-transparent border-2 border-slate-700 text-slate-300 font-bold py-3 px-10 rounded-2xl hover:border-[#38bdf8] hover:text-[#38bdf8] transition-all">Muat Lebih Banyak</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <main id="readView" class="hidden pb-20">
+        <div class="max-w-3xl mx-auto px-6 py-12">
+            <button onclick="backToHome()" class="mb-8 font-bold text-xs text-slate-400 hover:text-white transition-colors">← KEMBALI</button>
+            
+            <div id="sliderWrapper" class="slider-wrapper mb-10 border border-slate-700 group">
+                <div id="imageSlider" class="slider-container"></div>
+                
+                <button id="prevBtn" onclick="moveSlide(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 bg-slate-900/70 hover:bg-slate-900/90 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all z-20 font-black text-xl select-none">‹</button>
+                <button id="nextBtn" onclick="moveSlide(1)" class="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-900/70 hover:bg-slate-900/90 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all z-20 font-black text-xl select-none">›</button>
+                
+                <div id="sliderDots" class="absolute bottom-4 right-6 flex gap-1.5 z-20"></div>
+
+                <p id="readKredit" class="absolute bottom-4 left-6 text-[10px] bg-black/70 text-white px-3 py-1 rounded-full backdrop-blur-sm z-10 border border-white/10"></p>
+            </div>
+
+            <header class="mb-10">
+                <h1 id="readJudul" class="text-4xl md:text-5xl font-black text-white leading-tight mb-6 tracking-tighter"></h1>
+                <div class="flex items-center gap-4 border-b border-slate-800 pb-8 relative">
+                    <div id="readAvatarContainer" class="w-14 h-14 overflow-hidden rounded-2xl bg-slate-700 flex items-center justify-center text-white font-bold text-2xl border border-slate-600 flex-shrink-0"></div>
+                    <div class="flex-1">
+                        <p id="readPenulis" class="font-bold text-white text-lg"></p>
+                        <p id="readStats" class="text-xs text-slate-500 font-bold uppercase tracking-widest"></p>
+                    </div>
+                </div>
+            </header>
+            <article id="readIsi" class="content-render text-lg leading-relaxed text-slate-300 mb-12"></article>
+        </div>
+    </main>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxx87Qzy4VYYqnXET71EQc5cP_3ax9x4-sgLS8vEssE376fnSiOgfB91590qoBZ0kE-rA/exec";
+        
+        let allFetchedArticles = []; 
+        let globalArticles = [];     
+        let authorMap = {};          
+        let currentOffset = 0;
+        const LIMIT = 6;
+        let activeCategory = "Semua";
+
+        let currentSlideIndex = 0;
+        let totalSlides = 0;
+
+        function getThumb(url, size = "w1200", isProfile = false) {
+            if (!url || url === "" || url === "null") {
+                return isProfile ? null : "https://via.placeholder.com/800x450/1e293b/64748b?text=No+Image";
+            }
+            const match = url.match(/[-\w]{25,}/);
+            if (match) {
+                return `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}`;
+            }
+            return url;
+        }
+
+        async function init() {
+            // 1. Ambil Data Leaderboard
+            fetch(`${GAS_URL}?action=getLeaderboard`)
+                .then(r => r.json())
+                .then(res => { if(res.result === "success") renderLeaderboard(res.data); });
+            
+            // 2. Ambil Seluruh Data Penulis untuk Memetakan Foto Profil secara Akurat
+            try {
+                const authorRes = await fetch(`${GAS_URL}?action=getAuthors`).then(r => r.json());
+                if (authorRes.result === "success") {
+                    authorRes.data.forEach(auth => {
+                        if(auth.pin) authorMap[auth.pin.toString()] = auth.foto || auth.Link_Foto_Profil;
+                    });
+                }
+            } catch (e) { console.error("Gagal sinkronisasi data profil penulis:", e); }
+            
+            loadArticles(true);
+        }
+
+        // FIX FIX: Mengamankan pembacaan data properti objek dari Google Apps Script
+        function renderLeaderboard(data) {
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = data.map(auth => {
+                const namaUser = auth.Nama_Lengkap || auth.nama || "Penulis";
+                const fotoRaw = auth.Link_Foto_Profil || auth.foto;
+                const poinUser = auth.Total_Poin || auth.poin || 0;
+
+                const foto = getThumb(fotoRaw, "w100", true);
+                const initial = namaUser ? namaUser.charAt(0).toUpperCase() : "?";
+                return `
+                <div class="rank-card flex items-center gap-3 p-3">
+                    <div class="w-10 h-10 bg-slate-700 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0 border border-slate-600">
+                        ${foto ? `<img src="${foto}" class="w-full h-full object-cover">` : `<span>${initial}</span>`}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-xs truncate text-white uppercase">${namaUser}</p>
+                        <p class="text-[9px] text-orange-400 font-black tracking-tight uppercase">${poinUser} POINTS</p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function loadArticles(isInitial = false) {
+            const serverStatus = document.getElementById('serverStatus');
+            if(isInitial) { currentOffset = 0; globalArticles = []; document.getElementById('articleGrid').innerHTML = ''; }
+            
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            if (allFetchedArticles.length === 0 || isInitial) {
+                serverStatus.classList.remove('hidden');
+                try {
+                    const res = await fetch(`${GAS_URL}?action=getPublicData`).then(r => r.json());
+                    if(res.result === "success") {
+                        allFetchedArticles = res.data;
+                        if(res.categories) renderCategories(res.categories);
+                    }
+                } catch(e) { console.error(e); } 
+                finally { serverStatus.classList.add('hidden'); }
+            }
+
+            let filtered = allFetchedArticles;
+            if (activeCategory !== "Semua") {
+                filtered = filtered.filter(art => art.kategori === activeCategory);
+            }
+            if (q) {
+                filtered = filtered.filter(art => 
+                    (art.judul && art.judul.toLowerCase().includes(q)) || 
+                    (art.penulis && art.penulis.toLowerCase().includes(q)) ||
+                    (art.isi && art.isi.toLowerCase().includes(q))
+                );
+            }
+
+            const chunk = filtered.slice(currentOffset, currentOffset + LIMIT);
+            globalArticles = [...globalArticles, ...chunk];
+            
+            renderArticles(chunk, !isInitial);
+            
+            const hasMore = currentOffset + LIMIT < filtered.length;
+            document.getElementById('moreContainer').classList.toggle('hidden', !hasMore);
+            
+            if(hasMore) currentOffset += LIMIT;
+        }
+
+        function renderArticles(newData, append = false) {
+            const grid = document.getElementById('articleGrid');
+            const html = newData.map(art => {
+                const fotoUtama = Array.isArray(art.foto) ? art.foto[0] : art.foto;
+                const fotoProfilRaw = authorMap[art.pin ? art.pin.toString() : ""];
+                const fotoPenulis = getThumb(fotoProfilRaw, "w100", true);
+                const initial = art.penulis ? art.penulis.charAt(0).toUpperCase() : "?";
+
+                return `
+                <div class="article-card group cursor-pointer p-4 rounded-[2rem] transition-all hover:border-[#38bdf8]/50" onclick="openReadView('${art.id}')">
+                    <div class="relative h-52 mb-4 rounded-[1.5rem] overflow-hidden bg-slate-900">
+                        <img src="${getThumb(fotoUtama)}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                        <span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase border border-white/10">${art.kategori}</span>
+                    </div>
+                    <h3 class="text-lg font-extrabold text-slate-100 leading-tight line-clamp-2 group-hover:navy-text transition-colors">${art.judul}</h3>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-700/50">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full overflow-hidden bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white border border-slate-600 flex-shrink-0">
+                                ${fotoPenulis ? `<img src="${fotoPenulis}" class="w-full h-full object-cover">` : initial}
+                            </div>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${art.penulis}</p>
+                        </div>
+                        <div class="flex gap-3 text-[10px] font-bold text-slate-600">
+                            <span>👁️ ${art.views || 0}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            grid.innerHTML = append ? grid.innerHTML + html : html;
+        }
+
+        async function openReadView(id) {
+            const art = allFetchedArticles.find(a => a.id === id);
+            if(!art) return;
+            
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('readView').classList.remove('hidden');
+            document.getElementById('readJudul').innerText = art.judul;
+            document.getElementById('readPenulis').innerText = art.penulis;
+            document.getElementById('readIsi').innerHTML = art.isi;
+            document.getElementById('readStats').innerText = `${art.views || 0} Pembaca • ${art.kategori}`;
+            
+            const avatarBox = document.getElementById('readAvatarContainer');
+            const fotoProfilRaw = authorMap[art.pin ? art.pin.toString() : ""];
+            const fotoPenulis = getThumb(fotoProfilRaw, "w200", true);
+            const initial = art.penulis ? art.penulis.charAt(0).toUpperCase() : "?";
+            avatarBox.innerHTML = fotoPenulis ? `<img src="${fotoPenulis}" class="w-full h-full object-cover">` : initial;
+
+            const kreditEl = document.getElementById('readKredit');
+            if(art.kredit && art.kredit.trim() !== "") {
+                kreditEl.innerText = art.kredit;
+                kreditEl.classList.remove('hidden');
+            } else {
+                kreditEl.classList.add('hidden');
+            }
+
+            // AMBIL ELEMEN SLIDER & TOMBOL
+            const sliderWrapper = document.getElementById('sliderWrapper');
+            const slider = document.getElementById('imageSlider');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const dotsContainer = document.getElementById('sliderDots');
+
+            currentSlideIndex = 0; 
+
+            // LOGIKA DETEKSI KATEGORI KOMIK (MODE WEBTOON VERTIKAL)
+            const isKomik = art.kategori && art.kategori.toLowerCase() === 'komik';
+
+            if (art.foto && art.foto.length > 0) {
+                totalSlides = art.foto.length;
+
+                if (isKomik) {
+                    // Masuk Mode Webtoon: Hilangkan tombol navigasi, susun ke bawah
+                    sliderWrapper.classList.add('comic-mode');
+                    prevBtn.classList.add('hidden');
+                    nextBtn.classList.add('hidden');
+                    dotsContainer.innerHTML = '';
+                    
+                    slider.innerHTML = art.foto.map(f => `
+                        <div class="slider-item-container">
+                            <img src="${getThumb(f)}" class="slider-item" alt="Halaman Komik">
+                        </div>
+                    `).join('');
+                } else {
+                    // Masuk Mode Normal (Slider Horizontal untuk Landscape/Foto Biasa)
+                    sliderWrapper.classList.remove('comic-mode');
+                    
+                    slider.innerHTML = art.foto.map(f => `
+                        <div class="slider-item-container">
+                            <img src="${getThumb(f)}" class="slider-item">
+                        </div>
+                    `).join('');
+                    
+                    if (totalSlides > 1) {
+                        prevBtn.classList.remove('hidden');
+                        nextBtn.classList.remove('hidden');
+                        dotsContainer.innerHTML = art.foto.map((_, idx) => `
+                            <span onclick="goToSlide(${idx})" class="slider-dot cursor-pointer h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-[#38bdf8] w-4' : 'bg-white/40 w-2'}"></span>
+                        `).join('');
+                    } else {
+                        prevBtn.classList.add('hidden');
+                        nextBtn.classList.add('hidden');
+                        dotsContainer.innerHTML = '';
+                    }
+                    updateSliderPosition();
+                }
+            } else {
+                // Skenario jika naskah tidak memiliki lampiran gambar
+                totalSlides = 0;
+                sliderWrapper.classList.remove('comic-mode');
+                slider.innerHTML = `<div class="slider-item-container"><img src="https://via.placeholder.com/800x450/1e293b/64748b?text=No+Image" class="slider-item"></div>`;
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                dotsContainer.innerHTML = '';
+            }
+            
+            fetch(`${GAS_URL}?action=hitView&id=${id}`);
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        // FUNGSI NAVIGASI SLIDER HORIZONTAL (Untuk Kategori Non-Komik)
+        function moveSlide(direction) {
+            if (totalSlides <= 1) return;
+            currentSlideIndex += direction;
+            if (currentSlideIndex >= totalSlides) currentSlideIndex = 0;
+            if (currentSlideIndex < 0) currentSlideIndex = totalSlides - 1;
+            updateSliderPosition();
+        }
+
+        function goToSlide(index) {
+            currentSlideIndex = index;
+            updateSliderPosition();
+        }
+
+        function updateSliderPosition() {
+            // Jangan jalankan pergeseran horizontal jika sedang dalam mode komik
+            const sliderWrapper = document.getElementById('sliderWrapper');
+            if(sliderWrapper.classList.contains('comic-mode')) return;
+
+            const slider = document.getElementById('imageSlider');
+            slider.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
+            
+            const dots = document.querySelectorAll('.slider-dot');
+            dots.forEach((dot, idx) => {
+                if (idx === currentSlideIndex) {
+                    dot.classList.add('bg-[#38bdf8]', 'w-4');
+                    dot.classList.remove('bg-white/40', 'w-2');
+                } else {
+                    dot.classList.remove('bg-[#38bdf8]', 'w-4');
+                    dot.classList.add('bg-white/40', 'w-2');
+                }
+            });
+        }
+
+        function renderCategories(cats) {
+            const container = document.getElementById('catContainer');
+            container.innerHTML = cats.map(c => `
+                <button onclick="filterCat('${c}')" class="px-6 py-2 rounded-full border border-slate-700 text-sm font-bold transition-all ${c === activeCategory ? 'active-cat' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">${c}</button>
+            `).join('');
+        }
+
+        function filterCat(cat) { activeCategory = cat; loadArticles(true); }
+        function handleSearch() { clearTimeout(window.searchTimer); window.searchTimer = setTimeout(() => loadArticles(true), 600); }
+        function backToHome() { document.getElementById('readView').classList.add('hidden'); document.getElementById('homeView').classList.remove('hidden'); }
+        function loadMore() { loadArticles(false); }
+
+        init();
+    </script>
+</body>
+</html>
