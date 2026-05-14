@@ -14,10 +14,9 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .active-cat { background-color: var(--navy-light) !important; color: #0f172a !important; }
         
-        .article-card { background: var(--card-dark); border: 1px solid var(--border-dark); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .article-card { background: var(--card-dark); border: 1px solid var(--border-dark); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
         .article-card:hover { transform: translateY(-8px); border-color: var(--navy-light); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
         
-        /* SLIDER CSS */
         .slider-wrapper { position: relative; overflow: hidden; border-radius: 2rem; background: #000; aspect-ratio: 16/9; }
         .slider-container { display: flex; transition: transform 0.5s ease-in-out; height: 100%; }
         .slider-item-container { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
@@ -69,11 +68,9 @@
 
         <section class="bg-slate-900/50 border-t border-slate-800 py-16">
             <div class="max-w-7xl mx-auto px-6">
-                <div class="flex justify-between items-end mb-8">
-                    <div>
-                        <h2 class="text-2xl font-black text-white italic">🏆 TOP PENULIS</h2>
-                        <p class="text-slate-500 text-sm font-medium">Kreator paling aktif minggu ini</p>
-                    </div>
+                <div class="mb-8 text-center md:text-left">
+                    <h2 class="text-2xl font-black text-white italic">🏆 TOP PENULIS</h2>
+                    <p class="text-slate-500 text-sm font-medium uppercase tracking-widest">Kreator Berprestasi Minggu Ini</p>
                 </div>
                 <div id="leaderboardList" class="flex gap-4 overflow-x-auto pb-6 no-scrollbar">
                     </div>
@@ -84,13 +81,24 @@
     <main id="readView" class="hidden pb-20">
         <div class="max-w-4xl mx-auto px-6 py-12">
             <button onclick="backToHome()" class="mb-8 font-black text-xs text-slate-500 hover:text-white transition-all tracking-widest uppercase">← Kembali ke Galeri</button>
+            
             <div id="sliderWrapper" class="slider-wrapper mb-10 shadow-2xl">
                 <div id="imageSlider" class="slider-container"></div>
                 <button id="prevBtn" onclick="moveSlide(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-[#38bdf8] text-white w-12 h-12 rounded-full backdrop-blur-md transition-all z-20">‹</button>
                 <button id="nextBtn" onclick="moveSlide(1)" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-[#38bdf8] text-white w-12 h-12 rounded-full backdrop-blur-md transition-all z-20">›</button>
             </div>
-            <h1 id="readJudul" class="text-4xl md:text-6xl font-black text-white mb-6 leading-tight tracking-tighter"></h1>
-            <div id="readIsi" class="prose prose-invert prose-blue max-w-none text-slate-300 text-lg leading-relaxed"></div>
+
+            <div class="text-center mb-10">
+                <span id="readKategori" class="bg-[#38bdf8] text-slate-900 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 inline-block">Kategori</span>
+                <h1 id="readJudul" class="text-4xl md:text-6xl font-black text-white mb-6 leading-tight tracking-tighter"></h1>
+                <div class="flex items-center justify-center gap-4 text-slate-400 font-bold text-sm">
+                    <span id="readPenulis">Oleh: -</span>
+                    <span id="readTanggal">1 Jan 2026</span>
+                </div>
+            </div>
+
+            <div id="readIsi" class="prose prose-invert prose-blue max-w-none text-slate-300 text-lg leading-relaxed bg-slate-800/30 p-8 rounded-[2rem] border border-slate-700/50">
+                </div>
         </div>
     </main>
 
@@ -102,33 +110,35 @@
         let authorMap = {};
         let currentPage = 1;
         const ITEMS_PER_PAGE = 6;
+        let currentSlide = 0;
 
         function getThumb(url, size = "w1200") {
-            if (!url) return "https://via.placeholder.com/800x450/1e293b/64748b?text=No+Image";
+            if (!url || url === "" || url === "#") return "https://via.placeholder.com/800x450/1e293b/64748b?text=Portal+Literasi";
             const match = url.match(/[-\w]{25,}/);
             return match ? `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}` : url;
         }
 
         async function init() {
             try {
-                // 1. Ambil Profil Penulis
+                // 1. Ambil Data Penulis
                 const authRes = await fetch(`${GAS_URL}?action=getAuthors`).then(r => r.json());
                 const authors = authRes.data || [];
                 authors.forEach(a => { 
                     authorMap[a.pin?.toString().trim()] = a.foto;
-                    authorMap[a.nama?.toLowerCase().trim()] = a.foto;
                 });
                 renderLeaderboard(authors);
 
-                // 2. Ambil Artikel
-                const artRes = await fetch(`${GAS_URL}?action=getPublicData`).then(r => r.json());
+                // 2. Ambil Data Artikel
+                const artRes = await fetch(GAS_URL).then(r => r.json());
                 if (artRes.result === "success") {
                     allArticles = artRes.data;
                     filteredArticles = [...allArticles];
                     renderCategories(artRes.categories);
                     renderPage();
                 }
-            } catch (e) { console.error("Init failed:", e); }
+            } catch (e) {
+                console.error("Initialization error:", e);
+            }
         }
 
         function renderPage() {
@@ -136,6 +146,11 @@
             const start = (currentPage - 1) * ITEMS_PER_PAGE;
             const end = start + ITEMS_PER_PAGE;
             const pageData = filteredArticles.slice(start, end);
+
+            if(pageData.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-500">Belum ada karya untuk ditampilkan.</div>`;
+                return;
+            }
 
             grid.innerHTML = pageData.map((art, idx) => {
                 const fotoPenulis = getThumb(authorMap[art.pin?.toString().trim()], "w100");
@@ -148,7 +163,7 @@
                     <h3 class="text-xl font-bold text-white line-clamp-2 px-2 leading-snug mb-4">${art.judul}</h3>
                     <div class="flex items-center justify-between px-2 pt-4 border-t border-slate-700/50">
                         <div class="flex items-center gap-3">
-                            <img src="${fotoPenulis}" class="w-8 h-8 rounded-full object-cover border border-slate-600">
+                            <img src="${fotoPenulis}" class="w-8 h-8 rounded-full object-cover border border-slate-600 shadow-sm" onerror="this.src='https://ui-avatars.com/api/?name=${art.penulis}'">
                             <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">${art.penulis}</span>
                         </div>
                         <span class="text-[11px] font-bold text-slate-600">👁️ ${art.views || 0}</span>
@@ -159,39 +174,73 @@
             updatePagination();
         }
 
-        function updatePagination() {
-            const container = document.getElementById('paginationContainer');
-            const totalPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE);
-            
-            container.classList.toggle('hidden', filteredArticles.length <= ITEMS_PER_PAGE);
-            document.getElementById('pageIndicator').innerText = `Halaman ${currentPage} / ${totalPages}`;
-            document.getElementById('prevPage').disabled = currentPage === 1;
-            document.getElementById('nextPage').disabled = currentPage === totalPages;
-        }
-
-        function changePage(dir) {
-            currentPage += dir;
-            window.scrollTo({ top: 400, behavior: 'smooth' });
-            renderPage();
-        }
-
         function renderLeaderboard(data) {
             const list = document.getElementById('leaderboardList');
-            // Urutkan poin terbanyak, ambil 10 besar
-            const top10 = data.sort((a, b) => (b.poin || 0) - (a.poin || 0)).slice(0, 10);
+            const top10 = [...data].sort((a, b) => (b.poin || 0) - (a.poin || 0)).slice(0, 10);
             
             list.innerHTML = top10.map((auth, idx) => `
-                <div class="flex-shrink-0 bg-slate-800 border border-slate-700 p-4 rounded-3xl flex items-center gap-4 min-w-[240px]">
+                <div class="flex-shrink-0 bg-slate-800/40 border border-slate-700/50 p-4 rounded-3xl flex items-center gap-4 min-w-[240px]">
                     <div class="relative">
-                        <img src="${getThumb(auth.foto, 'w100')}" class="w-14 h-14 rounded-2xl object-cover border-2 border-slate-700">
+                        <img src="${getThumb(auth.foto, 'w100')}" class="w-14 h-14 rounded-2xl object-cover border-2 border-slate-700" onerror="this.src='https://ui-avatars.com/api/?name=${auth.nama}'">
                         <div class="absolute -top-2 -left-2 bg-[#38bdf8] text-slate-900 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shadow-lg">#${idx+1}</div>
                     </div>
                     <div>
                         <p class="font-black text-sm text-white uppercase tracking-tight truncate w-32">${auth.nama}</p>
-                        <p class="text-[10px] font-bold text-[#38bdf8] uppercase tracking-widest">${auth.poin || 0} Poin</p>
+                        <p class="text-[10px] font-bold text-[#38bdf8] uppercase tracking-widest">${auth.poin || 0} POIN</p>
                     </div>
                 </div>
             `).join('');
+        }
+
+        function openReadView(id) {
+            const art = allArticles.find(a => a.id === id);
+            if (!art) return;
+
+            // Update View Stat ke GAS
+            fetch(`${GAS_URL}?action=hitView&id=${id}`);
+
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('readView').classList.remove('hidden');
+            window.scrollTo(0, 0);
+
+            document.getElementById('readJudul').innerText = art.judul;
+            document.getElementById('readKategori').innerText = art.kategori;
+            document.getElementById('readPenulis').innerText = `Oleh: ${art.penulis}`;
+            document.getElementById('readIsi').innerHTML = art.isi.replace(/\n/g, '<br>');
+            
+            // Render Slider Gambar
+            const slider = document.getElementById('imageSlider');
+            const images = art.foto.filter(f => f && f !== "");
+            slider.innerHTML = images.map(f => `
+                <div class="slider-item-container">
+                    <img src="${getThumb(f, "w1200")}" class="slider-item">
+                </div>
+            `).join('');
+
+            currentSlide = 0;
+            updateSlider();
+            
+            // Sembunyikan navigasi slider jika foto cuma 1
+            document.getElementById('prevBtn').classList.toggle('hidden', images.length <= 1);
+            document.getElementById('nextBtn').classList.toggle('hidden', images.length <= 1);
+        }
+
+        function moveSlide(step) {
+            const slides = document.querySelectorAll('.slider-item-container');
+            if (slides.length <= 1) return;
+            currentSlide = (currentSlide + step + slides.length) % slides.length;
+            updateSlider();
+        }
+
+        function updateSlider() {
+            const slider = document.getElementById('imageSlider');
+            slider.style.transform = `translateX(-${currentSlide * 100}%)`;
+        }
+
+        function backToHome() {
+            document.getElementById('readView').classList.add('hidden');
+            document.getElementById('homeView').classList.remove('hidden');
+            renderPage();
         }
 
         function handleSearch() {
@@ -199,6 +248,14 @@
             filteredArticles = allArticles.filter(a => 
                 a.judul.toLowerCase().includes(q) || a.penulis.toLowerCase().includes(q)
             );
+            currentPage = 1;
+            renderPage();
+        }
+
+        function filterCat(cat) {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active-cat'));
+            document.getElementById(`btn-${cat}`).classList.add('active-cat');
+            filteredArticles = (cat === "Semua") ? [...allArticles] : allArticles.filter(a => a.kategori === cat);
             currentPage = 1;
             renderPage();
         }
@@ -211,20 +268,19 @@
             `).join('');
         }
 
-        function filterCat(cat) {
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active-cat'));
-            document.getElementById(`btn-${cat}`).classList.add('active-cat');
-            
-            filteredArticles = (cat === "Semua") ? [...allArticles] : allArticles.filter(a => a.kategori === cat);
-            currentPage = 1;
-            renderPage();
+        function updatePagination() {
+            const container = document.getElementById('paginationContainer');
+            const totalPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE);
+            container.classList.toggle('hidden', filteredArticles.length <= ITEMS_PER_PAGE);
+            document.getElementById('pageIndicator').innerText = `Halaman ${currentPage} / ${totalPages}`;
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
         }
 
-        // Fungsi Slider & ReadView tetap sama, hanya panggil backToHome() untuk reset scroll
-        function backToHome() {
-            document.getElementById('readView').classList.add('hidden');
-            document.getElementById('homeView').classList.remove('hidden');
-            window.scrollTo(0, 0);
+        function changePage(dir) {
+            currentPage += dir;
+            window.scrollTo({ top: 300, behavior: 'smooth' });
+            renderPage();
         }
 
         init();
