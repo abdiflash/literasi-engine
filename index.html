@@ -131,51 +131,44 @@
         let currentSlideIndex = 0;
         let totalSlides = 0;
 
-        // Thumbnail ringan untuk navigasi grid depan / avatar kecil
+        // Fungsi penampil gambar adaptif (Bisa diset ukuran pixelnya lewat parameter size)
         function getThumb(url, size = "w1200", isProfile = false) {
             if (!url || url === "" || url === "null") {
                 return isProfile ? null : "https://via.placeholder.com/800x450/1e293b/64748b?text=No+Image";
             }
             const match = url.match(/[-\w]{25,}/);
             if (match) {
+                // Menggunakan API Thumbnail resmi Google Drive yang stabil
                 return `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}`;
             }
             return url;
         }
 
-        // BARU: Fungsi mengambil kualitas asli uncompressed khusus untuk halaman baca / teks komik
-        function getOriginalImg(url) {
-            if (!url || url === "" || url === "null") {
-                return "https://via.placeholder.com/800x450/1e293b/64748b?text=No+Image";
-            }
-            const match = url.match(/[-\w]{25,}/);
-            if (match) {
-                return `https://docs.google.com/uc?export=view&id=${match[0]}`;
-            }
-            return url;
-        }
-
-        // DIUBAH: Menggunakan urutan Async-Await agar authorMap terisi penuh sebelum leaderboard di-render
         async function init() {
             const serverStatus = document.getElementById('serverStatus');
             serverStatus.classList.remove('hidden');
 
-            // 1. Ambil Seluruh Data Penulis Terlebih Dahulu (Petakan berdasarkan PIN & Nama)
+            // 1. AMBIL DATA PENULIS DULU (Petakan secara agresif berdasarkan PIN dan Nama)
             try {
                 const authorRes = await fetch(`${GAS_URL}?action=getAuthors`).then(r => r.json());
                 if (authorRes.result === "success") {
                     authorRes.data.forEach(auth => {
-                        const fotoUrl = auth.foto || auth.Link_Foto_Profil;
-                        if(auth.pin) authorMap[auth.pin.toString()] = fotoUrl;
+                        const fotoUrl = auth.foto || auth.Link_Foto_Profil || auth.Foto;
                         
-                        // Mapping juga berdasarkan nama huruf kecil agar leaderboard bisa mencocokkan silang
-                        const namaKey = (auth.Nama_Lengkap || auth.nama || "").toLowerCase().trim();
-                        if(namaKey) authorMap[namaKey] = fotoUrl;
+                        // Pemetaan pakai PIN
+                        if(auth.pin) authorMap[auth.pin.toString().trim()] = fotoUrl;
+                        if(auth.PIN) authorMap[auth.PIN.toString().trim()] = fotoUrl;
+                        
+                        // Pemetaan pakai berbagai variasi nama kolom database
+                        const variasiNama = [auth.Nama_Lengkap, auth.nama, auth.Nama, auth.penulis, auth.Penulis];
+                        variasiNama.forEach(n => {
+                            if(n) authorMap[n.toString().toLowerCase().trim()] = fotoUrl;
+                        });
                     });
                 }
-            } catch (e) { console.error("Gagal sinkronisasi data profil penulis:", e); }
+            } catch (e) { console.error("Gagal memetakan profil penulis:", e); }
             
-            // 2. Baru Ambil Data Leaderboard (Sekarang aman mencari foto ke authorMap)
+            // 2. AMBIL DATA LEADERBOARD (Sekarang pencocokan foto dijamin akurat)
             try {
                 const leaderboardRes = await fetch(`${GAS_URL}?action=getLeaderboard`).then(r => r.json());
                 if(leaderboardRes.result === "success") {
@@ -183,20 +176,20 @@
                 }
             } catch (e) { console.error("Gagal memuat leaderboard:", e); }
 
-            // 3. Muat Artikel Utama
+            // 3. MUAT DAFTAR ARTIKEL UTAMA
             loadArticles(true);
         }
 
-        // DIUBAH: Sinkronisasi pencocokan foto profil leaderboard via namaKey
         function renderLeaderboard(data) {
             const list = document.getElementById('leaderboardList');
             list.innerHTML = data.map(auth => {
-                const namaUser = auth.Nama_Lengkap || auth.nama || "Penulis";
-                const namaKey = namaUser.toLowerCase().trim();
+                const namaUser = auth.Nama_Lengkap || auth.nama || auth.Nama || "Penulis";
+                const namaKey = namaUser.toString().toLowerCase().trim();
+                const pinKey = (auth.pin || auth.PIN || auth.id_user || "").toString().trim();
                 
-                // Cari alternatif foto di database leaderboard, jika kosong cari dari peta authorMap global
-                const fotoRaw = auth.Link_Foto_Profil || auth.foto || authorMap[namaKey];
-                const poinUser = auth.Total_Poin || auth.poin || 0;
+                // Cari foto dari database internal leaderboard, jika tidak ada, ambil dari authorMap global
+                const fotoRaw = auth.Link_Foto_Profil || auth.foto || auth.Foto || authorMap[pinKey] || authorMap[namaKey];
+                const poinUser = auth.Total_Poin || auth.poin || auth.Poin || 0;
 
                 const foto = getThumb(fotoRaw, "w100", true);
                 const initial = namaUser ? namaUser.charAt(0).toUpperCase() : "?";
@@ -258,14 +251,14 @@
             const grid = document.getElementById('articleGrid');
             const html = newData.map(art => {
                 const fotoUtama = Array.isArray(art.foto) ? art.foto[0] : art.foto;
-                const fotoProfilRaw = authorMap[art.pin ? art.pin.toString() : ""];
+                const fotoProfilRaw = authorMap[art.pin ? art.pin.toString().trim() : ""];
                 const fotoPenulis = getThumb(fotoProfilRaw, "w100", true);
                 const initial = art.penulis ? art.penulis.charAt(0).toUpperCase() : "?";
 
                 return `
                 <div class="article-card group cursor-pointer p-4 rounded-[2rem] transition-all hover:border-[#38bdf8]/50" onclick="openReadView('${art.id}')">
                     <div class="relative h-52 mb-4 rounded-[1.5rem] overflow-hidden bg-slate-900">
-                        <img src="${getThumb(fotoUtama)}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                        <img src="${getThumb(fotoUtama, "w600")}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
                         <span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase border border-white/10">${art.kategori}</span>
                     </div>
                     <h3 class="text-lg font-extrabold text-slate-100 leading-tight line-clamp-2 group-hover:navy-text transition-colors">${art.judul}</h3>
@@ -297,7 +290,7 @@
             document.getElementById('readStats').innerText = `${art.views || 0} Pembaca • ${art.kategori}`;
             
             const avatarBox = document.getElementById('readAvatarContainer');
-            const fotoProfilRaw = authorMap[art.pin ? art.pin.toString() : ""];
+            const fotoProfilRaw = authorMap[art.pin ? art.pin.toString().trim() : ""];
             const fotoPenulis = getThumb(fotoProfilRaw, "w200", true);
             const initial = art.penulis ? art.penulis.charAt(0).toUpperCase() : "?";
             avatarBox.innerHTML = fotoPenulis ? `<img src="${fotoPenulis}" class="w-full h-full object-cover">` : initial;
@@ -323,7 +316,7 @@
                 totalSlides = art.foto.length;
 
                 if (isKomik) {
-                    // DIUBAH: Menggunakan getOriginalImg(f) agar resolusi asli komik termuat sempurna dan tulisan tajam
+                    // PERBAIKAN: Masuk Mode Webtoon pakai sz=w1600 (Lebar maksimal agar tulisan komik tajam/tidak pecah dan anti-blank)
                     sliderWrapper.classList.add('comic-mode');
                     prevBtn.classList.add('hidden');
                     nextBtn.classList.add('hidden');
@@ -331,16 +324,16 @@
                     
                     slider.innerHTML = art.foto.map(f => `
                         <div class="slider-item-container">
-                            <img src="${getOriginalImg(f)}" class="slider-item" alt="Halaman Komik">
+                            <img src="${getThumb(f, 'w1600')}" class="slider-item" alt="Halaman Komik">
                         </div>
                     `).join('');
                 } else {
-                    // Mode Normal Slider Horizontal (Menggunakan Gambar HQ Original juga agar tetap tajam)
+                    // Mode Slider Horizontal Biasa (Gunakan resolusi tinggi juga)
                     sliderWrapper.classList.remove('comic-mode');
                     
                     slider.innerHTML = art.foto.map(f => `
                         <div class="slider-item-container">
-                            <img src="${getOriginalImg(f)}" class="slider-item">
+                            <img src="${getThumb(f, 'w1600')}" class="slider-item">
                         </div>
                     `).join('');
                     
