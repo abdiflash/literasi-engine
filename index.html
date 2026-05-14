@@ -30,7 +30,7 @@
         .slider-item-container { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #090d16; overflow: hidden; }
         .slider-item { max-width: 100%; max-height: 100%; object-fit: contain; width: auto; height: auto; }
         
-        /* EXTRA STYLE: MODE WEBTOON/KOMIK (Scroll Vertikal agar teks terbaca jelas) */
+        /* MODE WEBTOON/KOMIK (Scroll Vertikal agar teks terbaca jelas) */
         .slider-wrapper.comic-mode { aspect-ratio: auto !important; height: auto !important; overflow: visible !important; background: transparent !important; border: none !important; border-radius: 0; }
         .slider-wrapper.comic-mode .slider-container { flex-direction: column !important; gap: 1.5rem; transform: none !important; height: auto !important; }
         .slider-wrapper.comic-mode .slider-item-container { width: 100% !important; height: auto !important; border-radius: 1.5rem; border: 1px solid var(--border-dark); }
@@ -131,6 +131,7 @@
         let currentSlideIndex = 0;
         let totalSlides = 0;
 
+        // Thumbnail ringan untuk navigasi grid depan / avatar kecil
         function getThumb(url, size = "w1200", isProfile = false) {
             if (!url || url === "" || url === "null") {
                 return isProfile ? null : "https://via.placeholder.com/800x450/1e293b/64748b?text=No+Image";
@@ -142,31 +143,59 @@
             return url;
         }
 
+        // BARU: Fungsi mengambil kualitas asli uncompressed khusus untuk halaman baca / teks komik
+        function getOriginalImg(url) {
+            if (!url || url === "" || url === "null") {
+                return "https://via.placeholder.com/800x450/1e293b/64748b?text=No+Image";
+            }
+            const match = url.match(/[-\w]{25,}/);
+            if (match) {
+                return `https://docs.google.com/uc?export=view&id=${match[0]}`;
+            }
+            return url;
+        }
+
+        // DIUBAH: Menggunakan urutan Async-Await agar authorMap terisi penuh sebelum leaderboard di-render
         async function init() {
-            // 1. Ambil Data Leaderboard
-            fetch(`${GAS_URL}?action=getLeaderboard`)
-                .then(r => r.json())
-                .then(res => { if(res.result === "success") renderLeaderboard(res.data); });
-            
-            // 2. Ambil Seluruh Data Penulis untuk Memetakan Foto Profil secara Akurat
+            const serverStatus = document.getElementById('serverStatus');
+            serverStatus.classList.remove('hidden');
+
+            // 1. Ambil Seluruh Data Penulis Terlebih Dahulu (Petakan berdasarkan PIN & Nama)
             try {
                 const authorRes = await fetch(`${GAS_URL}?action=getAuthors`).then(r => r.json());
                 if (authorRes.result === "success") {
                     authorRes.data.forEach(auth => {
-                        if(auth.pin) authorMap[auth.pin.toString()] = auth.foto || auth.Link_Foto_Profil;
+                        const fotoUrl = auth.foto || auth.Link_Foto_Profil;
+                        if(auth.pin) authorMap[auth.pin.toString()] = fotoUrl;
+                        
+                        // Mapping juga berdasarkan nama huruf kecil agar leaderboard bisa mencocokkan silang
+                        const namaKey = (auth.Nama_Lengkap || auth.nama || "").toLowerCase().trim();
+                        if(namaKey) authorMap[namaKey] = fotoUrl;
                     });
                 }
             } catch (e) { console.error("Gagal sinkronisasi data profil penulis:", e); }
             
+            // 2. Baru Ambil Data Leaderboard (Sekarang aman mencari foto ke authorMap)
+            try {
+                const leaderboardRes = await fetch(`${GAS_URL}?action=getLeaderboard`).then(r => r.json());
+                if(leaderboardRes.result === "success") {
+                    renderLeaderboard(leaderboardRes.data);
+                }
+            } catch (e) { console.error("Gagal memuat leaderboard:", e); }
+
+            // 3. Muat Artikel Utama
             loadArticles(true);
         }
 
-        // FIX FIX: Mengamankan pembacaan data properti objek dari Google Apps Script
+        // DIUBAH: Sinkronisasi pencocokan foto profil leaderboard via namaKey
         function renderLeaderboard(data) {
             const list = document.getElementById('leaderboardList');
             list.innerHTML = data.map(auth => {
                 const namaUser = auth.Nama_Lengkap || auth.nama || "Penulis";
-                const fotoRaw = auth.Link_Foto_Profil || auth.foto;
+                const namaKey = namaUser.toLowerCase().trim();
+                
+                // Cari alternatif foto di database leaderboard, jika kosong cari dari peta authorMap global
+                const fotoRaw = auth.Link_Foto_Profil || auth.foto || authorMap[namaKey];
                 const poinUser = auth.Total_Poin || auth.poin || 0;
 
                 const foto = getThumb(fotoRaw, "w100", true);
@@ -281,7 +310,6 @@
                 kreditEl.classList.add('hidden');
             }
 
-            // AMBIL ELEMEN SLIDER & TOMBOL
             const sliderWrapper = document.getElementById('sliderWrapper');
             const slider = document.getElementById('imageSlider');
             const prevBtn = document.getElementById('prevBtn');
@@ -289,15 +317,13 @@
             const dotsContainer = document.getElementById('sliderDots');
 
             currentSlideIndex = 0; 
-
-            // LOGIKA DETEKSI KATEGORI KOMIK (MODE WEBTOON VERTIKAL)
             const isKomik = art.kategori && art.kategori.toLowerCase() === 'komik';
 
             if (art.foto && art.foto.length > 0) {
                 totalSlides = art.foto.length;
 
                 if (isKomik) {
-                    // Masuk Mode Webtoon: Hilangkan tombol navigasi, susun ke bawah
+                    // DIUBAH: Menggunakan getOriginalImg(f) agar resolusi asli komik termuat sempurna dan tulisan tajam
                     sliderWrapper.classList.add('comic-mode');
                     prevBtn.classList.add('hidden');
                     nextBtn.classList.add('hidden');
@@ -305,16 +331,16 @@
                     
                     slider.innerHTML = art.foto.map(f => `
                         <div class="slider-item-container">
-                            <img src="${getThumb(f)}" class="slider-item" alt="Halaman Komik">
+                            <img src="${getOriginalImg(f)}" class="slider-item" alt="Halaman Komik">
                         </div>
                     `).join('');
                 } else {
-                    // Masuk Mode Normal (Slider Horizontal untuk Landscape/Foto Biasa)
+                    // Mode Normal Slider Horizontal (Menggunakan Gambar HQ Original juga agar tetap tajam)
                     sliderWrapper.classList.remove('comic-mode');
                     
                     slider.innerHTML = art.foto.map(f => `
                         <div class="slider-item-container">
-                            <img src="${getThumb(f)}" class="slider-item">
+                            <img src="${getOriginalImg(f)}" class="slider-item">
                         </div>
                     `).join('');
                     
@@ -332,7 +358,6 @@
                     updateSliderPosition();
                 }
             } else {
-                // Skenario jika naskah tidak memiliki lampiran gambar
                 totalSlides = 0;
                 sliderWrapper.classList.remove('comic-mode');
                 slider.innerHTML = `<div class="slider-item-container"><img src="https://via.placeholder.com/800x450/1e293b/64748b?text=No+Image" class="slider-item"></div>`;
@@ -345,7 +370,6 @@
             window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
-        // FUNGSI NAVIGASI SLIDER HORIZONTAL (Untuk Kategori Non-Komik)
         function moveSlide(direction) {
             if (totalSlides <= 1) return;
             currentSlideIndex += direction;
@@ -360,7 +384,6 @@
         }
 
         function updateSliderPosition() {
-            // Jangan jalankan pergeseran horizontal jika sedang dalam mode komik
             const sliderWrapper = document.getElementById('sliderWrapper');
             if(sliderWrapper.classList.contains('comic-mode')) return;
 
