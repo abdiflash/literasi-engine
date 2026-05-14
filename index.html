@@ -24,13 +24,13 @@
         .article-card { background: var(--card-dark); border: 1px solid var(--border-dark); transition: all 0.3s ease; }
         .rank-card { background: #1e293b; border: 1px solid var(--border-dark); border-radius: 1rem; transition: all 0.3s ease; }
         
-        /* LAYOUT SLIDER NORMAL (Landscape / Esai / Opini) */
+        /* LAYOUT SLIDER NORMAL */
         .slider-wrapper { position: relative; overflow: hidden; border-radius: 2.5rem; background: #090d16; aspect-ratio: 16/9; transition: all 0.4s ease; }
         .slider-container { display: flex; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; width: 100%; }
         .slider-item-container { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #090d16; overflow: hidden; }
         .slider-item { max-width: 100%; max-height: 100%; object-fit: contain; width: auto; height: auto; }
         
-        /* MODE WEBTOON/KOMIK (Scroll Vertikal agar teks terbaca jelas) */
+        /* MODE WEBTOON/KOMIK */
         .slider-wrapper.comic-mode { aspect-ratio: auto !important; height: auto !important; overflow: visible !important; background: transparent !important; border: none !important; border-radius: 0; }
         .slider-wrapper.comic-mode .slider-container { flex-direction: column !important; gap: 1.5rem; transform: none !important; height: auto !important; }
         .slider-wrapper.comic-mode .slider-item-container { width: 100% !important; height: auto !important; border-radius: 1.5rem; border: 1px solid var(--border-dark); }
@@ -68,7 +68,10 @@
                 <div class="bg-slate-800/30 p-6 rounded-[2.5rem] border border-slate-700 sticky top-28">
                     <h2 class="font-black text-lg mb-6 flex items-center gap-2 text-white">🏆 TOP PENULIS</h2>
                     <div id="leaderboardList" class="space-y-3">
-                        <div class="animate-pulse flex space-x-4"><div class="rounded-full bg-slate-700 h-10 w-10"></div><div class="h-2 bg-slate-700 rounded w-full"></div></div>
+                        <div class="animate-pulse flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl">
+                            <div class="rounded-xl bg-slate-700 h-10 w-10 flex-shrink-0"></div>
+                            <div class="flex-1 space-y-2"><div class="h-3 bg-slate-700 rounded w-3/4"></div><div class="h-2 bg-slate-700 rounded w-1/2"></div></div>
+                        </div>
                     </div>
                 </div>
             </aside>
@@ -95,12 +98,9 @@
             
             <div id="sliderWrapper" class="slider-wrapper mb-10 border border-slate-700 group">
                 <div id="imageSlider" class="slider-container"></div>
-                
                 <button id="prevBtn" onclick="moveSlide(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 bg-slate-900/70 hover:bg-slate-900/90 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all z-20 font-black text-xl select-none">‹</button>
                 <button id="nextBtn" onclick="moveSlide(1)" class="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-900/70 hover:bg-slate-900/90 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all z-20 font-black text-xl select-none">›</button>
-                
                 <div id="sliderDots" class="absolute bottom-4 right-6 flex gap-1.5 z-20"></div>
-
                 <p id="readKredit" class="absolute bottom-4 left-6 text-[10px] bg-black/70 text-white px-3 py-1 rounded-full backdrop-blur-sm z-10 border border-white/10"></p>
             </div>
 
@@ -127,18 +127,15 @@
         let currentOffset = 0;
         const LIMIT = 6;
         let activeCategory = "Semua";
-
         let currentSlideIndex = 0;
         let totalSlides = 0;
 
-        // Fungsi penampil gambar adaptif (Bisa diset ukuran pixelnya lewat parameter size)
         function getThumb(url, size = "w1200", isProfile = false) {
             if (!url || url === "" || url === "null") {
                 return isProfile ? null : "https://via.placeholder.com/800x450/1e293b/64748b?text=No+Image";
             }
             const match = url.match(/[-\w]{25,}/);
             if (match) {
-                // Menggunakan API Thumbnail resmi Google Drive yang stabil
                 return `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}`;
             }
             return url;
@@ -148,51 +145,85 @@
             const serverStatus = document.getElementById('serverStatus');
             serverStatus.classList.remove('hidden');
 
-            // 1. AMBIL DATA PENULIS DULU (Petakan secara agresif berdasarkan PIN dan Nama)
+            // 1. PETAKAN DATA PROFILE DULU
             try {
                 const authorRes = await fetch(`${GAS_URL}?action=getAuthors`).then(r => r.json());
-                if (authorRes.result === "success") {
-                    authorRes.data.forEach(auth => {
-                        const fotoUrl = auth.foto || auth.Link_Foto_Profil || auth.Foto;
-                        
-                        // Pemetaan pakai PIN
-                        if(auth.pin) authorMap[auth.pin.toString().trim()] = fotoUrl;
-                        if(auth.PIN) authorMap[auth.PIN.toString().trim()] = fotoUrl;
-                        
-                        // Pemetaan pakai berbagai variasi nama kolom database
-                        const variasiNama = [auth.Nama_Lengkap, auth.nama, auth.Nama, auth.penulis, auth.Penulis];
-                        variasiNama.forEach(n => {
-                            if(n) authorMap[n.toString().toLowerCase().trim()] = fotoUrl;
-                        });
+                const authorData = authorRes.data || (Array.isArray(authorRes) ? authorRes : []);
+                authorData.forEach(auth => {
+                    const fotoUrl = auth.foto || auth.Link_Foto_Profil || auth.Foto;
+                    if(auth.pin) authorMap[auth.pin.toString().trim()] = fotoUrl;
+                    if(auth.PIN) authorMap[auth.PIN.toString().trim()] = fotoUrl;
+                    
+                    const variasiNama = [auth.Nama_Lengkap, auth.nama, auth.Nama, auth.penulis, auth.Penulis];
+                    variasiNama.forEach(n => {
+                        if(n) authorMap[n.toString().toLowerCase().trim()] = fotoUrl;
                     });
-                }
+                });
             } catch (e) { console.error("Gagal memetakan profil penulis:", e); }
             
-            // 2. AMBIL DATA LEADERBOARD (Sekarang pencocokan foto dijamin akurat)
+            // 2. LOAD ARTIKEL UTAMA TERLEBIH DAHULU (Agar data siap dipakai fallback jika server leaderboard down)
+            await loadArticles(true);
+
+            // 3. LOAD LEADERBOARD DARI SERVER
+            let leaderboardLoaded = false;
             try {
                 const leaderboardRes = await fetch(`${GAS_URL}?action=getLeaderboard`).then(r => r.json());
-                if(leaderboardRes.result === "success") {
-                    renderLeaderboard(leaderboardRes.data);
+                if (leaderboardRes && (leaderboardRes.result === "success" || Array.isArray(leaderboardRes))) {
+                    const lData = leaderboardRes.data || (Array.isArray(leaderboardRes) ? leaderboardRes : []);
+                    if (lData && lData.length > 0) {
+                        renderLeaderboard(lData);
+                        leaderboardLoaded = true;
+                    }
                 }
-            } catch (e) { console.error("Gagal memuat leaderboard:", e); }
+            } catch (e) { 
+                console.error("Gagal mengambil leaderboard via API. Sistem beralih ke local fallback...", e); 
+            }
 
-            // 3. MUAT DAFTAR ARTIKEL UTAMA
-            loadArticles(true);
+            // ANTI-BLANK TRIGGER: Jika server leaderboard ngadat, buat list otomatis berbasis akumulasi artikel terpopuler
+            if (!leaderboardLoaded) {
+                generateFallbackLeaderboard();
+            }
+        }
+
+        // FUNGSI CADANGAN OTOMATIS JIKA SERVER LEADERBOARD DOWN/CORS
+        function generateFallbackLeaderboard() {
+            if (!allFetchedArticles || allFetchedArticles.length === 0) {
+                document.getElementById('leaderboardList').innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Belum ada data</p>';
+                return;
+            }
+            const databaseKalkulasi = {};
+            allFetchedArticles.forEach(art => {
+                const nama = art.penulis || "Penulis";
+                const views = parseInt(art.views) || 0;
+                const pin = art.pin ? art.pin.toString().trim() : "";
+                
+                if (!databaseKalkulasi[nama]) {
+                    databaseKalkulasi[nama] = { nama: nama, pin: pin, poin: 0 };
+                }
+                // Kalkulasi poin: Setiap kirim naskah dapat 10 Poin + total views bacaan
+                databaseKalkulasi[nama].poin += (views + 10);
+            });
+
+            const sortedData = Object.values(databaseKalkulasi).sort((a, b) => b.poin - a.poin).slice(0, 5);
+            renderLeaderboard(sortedData);
         }
 
         function renderLeaderboard(data) {
+            if(!Array.isArray(data) || data.length === 0) return;
             const list = document.getElementById('leaderboardList');
+            
             list.innerHTML = data.map(auth => {
-                const namaUser = auth.Nama_Lengkap || auth.nama || auth.Nama || "Penulis";
+                const namaUser = auth.Nama_Lengkap || auth.nama || auth.Nama || auth.penulis || "Penulis";
                 const namaKey = namaUser.toString().toLowerCase().trim();
                 const pinKey = (auth.pin || auth.PIN || auth.id_user || "").toString().trim();
                 
-                // Cari foto dari database internal leaderboard, jika tidak ada, ambil dari authorMap global
+                // Pencarian gambar berlapis secara agresif via PIN ataupun teks nama
                 const fotoRaw = auth.Link_Foto_Profil || auth.foto || auth.Foto || authorMap[pinKey] || authorMap[namaKey];
                 const poinUser = auth.Total_Poin || auth.poin || auth.Poin || 0;
 
                 const foto = getThumb(fotoRaw, "w100", true);
                 const initial = namaUser ? namaUser.charAt(0).toUpperCase() : "?";
+                
                 return `
                 <div class="rank-card flex items-center gap-3 p-3">
                     <div class="w-10 h-10 bg-slate-700 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0 border border-slate-600">
@@ -316,7 +347,6 @@
                 totalSlides = art.foto.length;
 
                 if (isKomik) {
-                    // PERBAIKAN: Masuk Mode Webtoon pakai sz=w1600 (Lebar maksimal agar tulisan komik tajam/tidak pecah dan anti-blank)
                     sliderWrapper.classList.add('comic-mode');
                     prevBtn.classList.add('hidden');
                     nextBtn.classList.add('hidden');
@@ -328,7 +358,6 @@
                         </div>
                     `).join('');
                 } else {
-                    // Mode Slider Horizontal Biasa (Gunakan resolusi tinggi juga)
                     sliderWrapper.classList.remove('comic-mode');
                     
                     slider.innerHTML = art.foto.map(f => `
