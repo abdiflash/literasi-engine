@@ -38,286 +38,95 @@
             padding: 25px 6%;
         }
 
-        .logo {
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+        .logo span { color: #64748b; font-weight: 400; }
 
-        .logo span {
-            color: #64748b;
-            font-weight: 400;
-        }
+        .nav-links { display: flex; align-items: center; gap: 25px; }
+        .nav-links a { color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 600; }
+        .nav-links a.active { color: var(--primary-blue); }
+        .search-icon-btn { background: none; border: none; color: var(--text-main); cursor: pointer; font-size: 16px; }
 
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 25px;
-        }
+        .hero { text-align: center; padding: 40px 20px 20px 20px; }
+        .hero h1 { font-size: 64px; font-weight: 800; margin-bottom: 25px; letter-spacing: -1px; }
+        .hero h1 span { color: var(--primary-blue); }
 
-        .nav-links a {
-            color: var(--text-main);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .nav-links a.active {
-            color: var(--primary-blue);
-        }
-
-        .search-icon-btn {
-            background: none;
-            border: none;
-            color: var(--text-main);
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .hero {
-            text-align: center;
-            padding: 40px 20px 20px 20px;
-        }
-
-        .hero h1 {
-            font-size: 64px;
-            font-weight: 800;
-            margin-bottom: 25px;
-            letter-spacing: -1px;
-        }
-
-        .hero h1 span {
-            color: var(--primary-blue);
-        }
-
-        .controls-container {
-            max-width: 760px;
-            margin: 0 auto 40px auto;
-            padding: 0 20px;
-        }
-
-        .search-wrapper {
-            position: relative;
-            margin-bottom: 30px;
-        }
-
-        .search-wrapper i {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #475569;
-            font-size: 16px;
-        }
-
+        .controls-container { max-width: 760px; margin: 0 auto 40px auto; padding: 0 20px; }
+        .search-wrapper { position: relative; margin-bottom: 30px; }
+        .search-wrapper i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 16px; }
+        
         .search-input {
-            width: 100%;
-            padding: 16px 20px 16px 55px;
-            background-color: #0f1a30;
-            border: 1px solid #1e2e4a;
-            border-radius: 30px;
-            color: var(--text-main);
-            font-size: 15px;
-            outline: none;
-            transition: all 0.2s;
+            width: 100%; padding: 16px 20px 16px 55px; background-color: #0f1a30;
+            border: 1px solid #1e2e4a; border-radius: 30px; color: var(--text-main);
+            font-size: 15px; outline: none; transition: all 0.2s;
         }
-
-        .search-input:focus {
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 1px var(--primary-blue);
-        }
+        .search-input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 1px var(--primary-blue); }
 
         .filter-settings {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            border-bottom: 1px solid #16253f;
-            padding-bottom: 25px;
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            gap: 20px; border-bottom: 1px solid #16253f; padding-bottom: 25px;
         }
 
-        .role-filters {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
+        .role-filters { display: flex; gap: 10px; flex-wrap: wrap; }
         .btn-filter {
-            background-color: #162544;
-            color: #94a3b8;
-            border: none;
-            padding: 10px 22px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.2s;
-            letter-spacing: 0.5px;
+            background-color: #162544; color: #94a3b8; border: none; padding: 10px 22px;
+            border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase;
+            cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
         }
+        .btn-filter.active { background-color: #1e293b; color: var(--primary-blue); border: 1px solid #334155; }
 
-        .btn-filter.active {
-            background-color: #1e293b;
-            color: var(--primary-blue);
-            border: 1px solid #334155;
-        }
-
-        .dropdown-group {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .select-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 11px;
-            font-weight: 700;
-            color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
+        .dropdown-group { display: flex; align-items: center; gap: 20px; }
+        .select-wrapper { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
         .select-wrapper select {
-            background-color: #0f1a30;
-            color: var(--text-main);
-            border: 1px solid #1e2e4a;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            outline: none;
-            cursor: pointer;
+            background-color: #0f1a30; color: var(--text-main); border: 1px solid #1e2e4a;
+            padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; outline: none; cursor: pointer;
         }
 
-        .content-section {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 4%;
-        }
+        .content-section { max-width: 1200px; margin: 0 auto; padding: 0 4%; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 30px; }
 
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 30px;
+        /* PERBAIKAN: Bungkus link agar card bisa diklik seluruhnya */
+        .card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
         }
 
         .card {
-            background-color: var(--card-bg);
-            border-radius: 24px;
-            overflow: hidden;
-            border: 1px solid transparent;
-            transition: transform 0.2s, border-color 0.2s;
-            display: flex;
-            flex-direction: column;
+            background-color: var(--card-bg); border-radius: 24px; overflow: hidden;
+            border: 1px solid transparent; transition: transform 0.2s, border-color 0.2s;
+            display: flex; flex-direction: column; height: 100%;
         }
+        .card:hover { transform: translateY(-4px); border-color: #1e3354; }
 
-        .card:hover {
-            transform: translateY(-4px);
-            border-color: #1e3354;
-        }
-
-        .card-banner {
-            position: relative;
+        .card-banner { position: relative; width: 100%; height: 210px; background-color: #0b1424; overflow: hidden; }
+        
+        .card-banner img {
             width: 100%;
-            height: 210px;
-            background-color: #0b1424;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .badge-category {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background-color: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(4px);
-            color: #cbd5e1;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            position: absolute; top: 15px; left: 15px; background-color: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(4px); color: #cbd5e1; padding: 6px 14px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; z-index: 2;
         }
 
-        .card-body {
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            justify-content: space-between;
-        }
-
-        .card-title {
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.4;
-            margin-bottom: 25px;
-            color: var(--text-main);
-        }
-
-        .card-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-top: 1px solid #1e2e4d;
-            padding-top: 15px;
-        }
-
-        .author-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .author-img {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-            background-color: #1e293b;
-        }
-
-        .author-meta {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .author-name {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #94a3b8;
-        }
-
-        .author-role {
-            font-size: 10px;
-            color: #475569;
-            margin-top: 2px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .view-count {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            color: #475569;
-        }
+        .card-body { padding: 25px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; }
+        .card-title { font-size: 22px; font-weight: 700; line-height: 1.4; margin-bottom: 25px; color: var(--text-main); }
+        .card-footer { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #1e2e4d; padding-top: 15px; }
+        
+        .author-info { display: flex; align-items: center; gap: 10px; }
+        .author-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background-color: #1e293b; }
+        .author-meta { display: flex; flex-direction: column; }
+        .author-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; }
+        .author-role { font-size: 10px; color: #475569; margin-top: 2px; font-weight: 600; text-transform: uppercase; }
+        .view-count { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #475569; }
 
         .status-message {
-            text-align: center;
-            padding: 80px 20px;
-            color: #475569;
-            font-weight: 700;
-            font-size: 14px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            width: 100%;
-            grid-column: 1 / -1;
+            text-align: center; padding: 80px 20px; color: #475569; font-weight: 700;
+            font-size: 14px; letter-spacing: 1px; text-transform: uppercase; width: 100%; grid-column: 1 / -1;
         }
     </style>
 </head>
@@ -340,7 +149,7 @@
         <section class="controls-container">
             <div class="search-wrapper">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" class="search-input" placeholder="Cari karya, penulis, atau bulan/tahun...">
+                <input type="text" id="searchInput" class="search-input" placeholder="Cari karya, penulis, atau bulan/tahun (Contoh: 14 Mei 2026)...">
             </div>
 
             <div class="filter-settings">
@@ -388,16 +197,17 @@
     </main>
 
     <script>
-        // Data Dummy Terintegrasi Sesuai Gambar Database Sheets & Redaksi Anda
+        // Database Tersinkron dengan Format Kolom Anda
         const mockDatabase = [
             {
                 id: "ART-97BD539E",
-                timestamp: "5/14/2026 14:10", // Format asli DB: Bulan/Hari/Tahun
+                timestamp: "5/14/2026 14:10",
                 judul: "Raungan Taring Baja Eps. 1",
                 kategori: "Komik & Ilustrasi",
                 penulis: "Leonardus Yesiabdi",
                 peran: "Orang Tua",
                 detailPeran: "ORTU • ABILAH HUSAIN",
+                link_foto_1: "https://drive.google.com/file/d/1HHdWi_HGMMVSdjr58rR-uorBp1-PvEk0/view?usp=drivesdk", // Link Asli dari G-Sheets
                 views: 29,
                 avatar: "https://i.pravatar.cc/100?img=33"
             },
@@ -407,25 +217,26 @@
                 judul: "Desain Rumah Minimalis",
                 kategori: "Fotografi",
                 penulis: "Leonardus Yesi",
-                peran: "Guru/Staf", // Sesuai data string dari database di image_ce3c67.png
+                peran: "Guru/Staf",
                 detailPeran: "GURU/STAF • PUBLIKASI",
+                link_foto_1: "https://drive.google.com/file/d/1kay7BScd-LbURxXjoZrQ8XdB5RQNOKfj/view?usp=drivesdk", // Contoh link lain
                 views: 9,
                 avatar: "https://i.pravatar.cc/100?img=12"
             },
             {
                 id: "ART-11QA902C",
-                timestamp: "5/12/2026 11:15",
-                judul: "Tes",
+                timestamp: "4/12/2026 11:15",
+                judul: "Tes Artikel Biasa",
                 kategori: "Artikel Umum",
-                penulis: "Leonardus Yesiabdi",
-                peran: "Orang Tua",
-                detailPeran: "ORANG TUA",
+                penulis: "Budi Santoso",
+                peran: "Siswa",
+                detailPeran: "SISWA • KELAS X-A",
+                link_foto_1: "", // Tanpa gambar
                 views: 4,
-                avatar: "https://i.pravatar.cc/100?img=33"
+                avatar: "https://i.pravatar.cc/100?img=11"
             }
         ];
 
-        // Daftar nama bulan bahasa Indonesia untuk konversi pencarian teks tanggal
         const namaBulanIndo = [
             "januari", "februari", "maret", "april", "mei", "juni", 
             "juli", "agustus", "september", "oktober", "november", "desember"
@@ -442,6 +253,19 @@
         const sortSelect = document.getElementById('sortSelect');
         const roleButtons = document.querySelectorAll('#roleFilterGroup .btn-filter');
 
+        // PERBAIKAN 1: Fungsi untuk mengubah Link Google Drive Viewer menjadi Tautan Thumbnail Download
+        function getDriveDirectLink(driveUrl) {
+            if (!driveUrl) return null;
+            // Ekstrak ID File dari URL Google Drive
+            const match = driveUrl.match(/\/d\/(.+?)\//);
+            if (match && match[1]) {
+                const fileId = match[1];
+                // Konversi menjadi link export view agar bisa dibaca tag <img>
+                return `https://drive.google.com/uc?export=view&id=${fileId}`;
+            }
+            return driveUrl; // Kembalikan url asli jika bukan link g-drive standar
+        }
+
         function renderFeed(data) {
             feedGrid.innerHTML = "";
             
@@ -452,30 +276,45 @@
 
             data.forEach(item => {
                 const card = document.createElement('div');
-                card.className = 'card';
+                // Mengkonversi link
+                const directImageUrl = getDriveDirectLink(item.link_foto_1);
+                
+                // Jika gambar berhasil diproses, pasang tag <img>. Jika kosong/gagal, tampilkan ikon fallback.
+                const imageHTML = directImageUrl 
+                    ? `<img src="${directImageUrl}" alt="Thumbnail Karya" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                       <div class="fallback-icon" style="display:none; width:100%; height:100%; background:#1a273f; align-items:center; justify-content:center; color:#334155;">
+                           <i class="fa-regular fa-image" style="font-size: 28px;"></i>
+                       </div>`
+                    : `<div style="width:100%; height:100%; background:#1a273f; display:flex; align-items:center; justify-content:center; color:#334155;">
+                           <i class="fa-regular fa-image" style="font-size: 28px;"></i>
+                       </div>`;
+
+                // PERBAIKAN 2: Bungkus seluruh struktur card dalam tag <a> agar bisa diklik
                 card.innerHTML = `
-                    <div class="card-banner">
-                        <span class="badge-category">${getShortCategory(item.kategori)}</span>
-                        <div style="width:100%; height:100%; background:#1a273f; display:flex; align-items:center; justify-content:center; color:#334155;">
-                            <i class="fa-regular fa-image" style="font-size: 28px;"></i>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3 class="card-title">${item.judul}</h3>
-                        <div class="card-footer">
-                            <div class="author-info">
-                                <img src="${item.avatar}" alt="${item.penulis}" class="author-img">
-                                <div class="author-meta">
-                                    <span class="author-name">${item.penulis}</span>
-                                    <span class="author-role">${item.detailPeran}</span>
+                    <a href="baca.html?id=${item.id}" class="card-link">
+                        <div class="card">
+                            <div class="card-banner">
+                                <span class="badge-category">${getShortCategory(item.kategori)}</span>
+                                ${imageHTML}
+                            </div>
+                            <div class="card-body">
+                                <h3 class="card-title">${item.judul}</h3>
+                                <div class="card-footer">
+                                    <div class="author-info">
+                                        <img src="${item.avatar}" alt="${item.penulis}" class="author-img">
+                                        <div class="author-meta">
+                                            <span class="author-name">${item.penulis}</span>
+                                            <span class="author-role">${item.detailPeran}</span>
+                                        </div>
+                                    </div>
+                                    <div class="view-count">
+                                        <i class="fa-regular fa-eye"></i>
+                                        <span>${item.views}</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="view-count">
-                                <i class="fa-regular fa-eye"></i>
-                                <span>${item.views}</span>
-                            </div>
                         </div>
-                    </div>
+                    </a>
                 `;
                 feedGrid.appendChild(card);
             });
@@ -488,43 +327,41 @@
             return fullCategory;
         }
 
-        // ENGINE RESPONSif: Memperbaiki Filter Peran & Pencarian Bulan/Tahun
         function filterAndSortData() {
             let filtered = [...mockDatabase];
 
-            // 1. Logika Perbaikan Filter Peran (Menggabungkan Guru & Guru/Staf)
             if (currentRole !== "all") {
                 filtered = filtered.filter(item => {
                     if (currentRole === "Guru") {
-                        // Jika menekan tombol 'GURU', data bertuliskan 'Guru' maupun 'Guru/Staf' otomatis lolos penyaringan
                         return item.peran.toLowerCase().includes('guru') || item.peran.toLowerCase().includes('staf');
                     }
                     return item.peran.toLowerCase() === currentRole.toLowerCase();
                 });
             }
 
-            // 2. Filter Kategori Dropdown
             if (currentCategory !== "all") {
                 filtered = filtered.filter(item => item.kategori === currentCategory);
             }
 
-            // 3. Logika Mutakhir Pencarian Multi-Keyword (Judul, Penulis, Bulan, Tahun)
+            // PERBAIKAN 3: Merakit tanggal menjadi string utuh sebelum dicocokkan dengan input
             if (searchQuery.trim() !== "") {
                 const query = searchQuery.toLowerCase().trim();
                 
                 filtered = filtered.filter(item => {
-                    // Pecah timestamp (contoh: "5/14/2026 14:10") untuk ekstraksi waktu
                     const parts = item.timestamp.split(' ')[0].split('/');
-                    const itemBulanAngka = parseInt(parts[0]); // 5
-                    const itemHari = parts[1];                 // 14
-                    const itemTahun = parts[2];                // 2026
-                    const itemNamaBulan = namaBulanIndo[itemBulanAngka - 1] || ""; // "mei"
+                    const itemBulanAngka = parseInt(parts[0]);
+                    const itemHari = parts[1];
+                    const itemTahun = parts[2];
+                    const itemNamaBulan = namaBulanIndo[itemBulanAngka - 1] || "";
 
-                    // Cek apakah query pengguna mencocokkan kriteria teks tanggal biasa/nama bulan
-                    const matchTanggal = itemTahun.includes(query) || 
-                                         itemNamaBulan.includes(query) || 
-                                         `${itemHari} ${itemNamaBulan}`.includes(query) ||
-                                         `${itemNamaBulan} ${itemTahun}`.includes(query);
+                    // Kita merakit tanggal menjadi kalimat yang bisa dibaca ("14 mei 2026")
+                    const stringTanggalLengkap = `${itemHari} ${itemNamaBulan} ${itemTahun}`;
+                    const stringBulanTahun = `${itemNamaBulan} ${itemTahun}`;
+                    
+                    // Cek apakah KALIMAT TANGGAL YANG DIRAKIT mengandung KEYWORD YANG DIKETIK
+                    const matchTanggal = stringTanggalLengkap.includes(query) || 
+                                         stringBulanTahun.includes(query) ||
+                                         item.timestamp.includes(query);
 
                     return item.judul.toLowerCase().includes(query) || 
                            item.penulis.toLowerCase().includes(query) || 
@@ -532,7 +369,6 @@
                 });
             }
 
-            // 4. Pengurutan (Sorting)
             if (currentSort === "terbaru") {
                 filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             } else if (currentSort === "populer") {
@@ -542,7 +378,6 @@
             renderFeed(filtered);
         }
 
-        // --- Pemicu Event Kontrol ---
         roleButtons.forEach(button => {
             button.addEventListener('click', () => {
                 roleButtons.forEach(btn => btn.classList.remove('active'));
@@ -567,7 +402,6 @@
             filterAndSortData();
         });
 
-        // Tampilkan data saat pertama kali aplikasi dimuat
         document.addEventListener("DOMContentLoaded", () => {
             filterAndSortData();
         });
