@@ -246,26 +246,16 @@
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
-        // Helper Pencarian Waktu (Telah Diperbaiki untuk mendeteksi bulan Mei secara tepat)
+        // Helper Pencarian Waktu
         function formatIndonesianDate(timestampStr) {
             if (!timestampStr) return "";
             try {
-                let d = new Date(timestampStr);
-                
-                // Fallback pengaman jika format yang dikirim server adalah format lokal spt dd/mm/yyyy
-                if (isNaN(d.getTime())) {
-                    const parts = timestampStr.toString().split(/[\/\-\s]/);
-                    if (parts.length >= 3) {
-                        d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`); 
-                    }
-                }
-
-                if (isNaN(d.getTime())) return timestampStr.toString();
-                
+                const d = new Date(timestampStr);
+                if (isNaN(d.getTime())) return timestampStr;
                 const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
                 return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
             } catch (e) {
-                return timestampStr.toString();
+                return timestampStr;
             }
         }
 
@@ -310,9 +300,7 @@
             // 2. Saring Pencarian Teks & Tanggal
             if (searchQuery !== "") {
                 filteredArticles = filteredArticles.filter(art => {
-                    // Penyesuaian properti agar mencari ke semua kemungkinan kolom waktu
-                    const waktuMentah = art.timestamp || art.Timestamp || art.waktu || art.Waktu;
-                    const tgl = formatIndonesianDate(waktuMentah).toLowerCase();
+                    const tgl = formatIndonesianDate(art.timestamp || art.Timestamp).toLowerCase();
                     const judul = (art.judul || "").toLowerCase();
                     const penulis = (art.penulis || "").toLowerCase();
                     const isi = (art.isi || "").toLowerCase();
@@ -381,15 +369,14 @@
                 const peran = art.peran || art.Peran || art.peran_saat_menulis || art.Peran_Saat_Menulis || '';
                 const detailPeran = art.detail_peran || art.Detail_Peran || '';
                 const displayPeran = peran ? `${peran}${detailPeran ? ' • ' + detailPeran : ''}` : '';
-                const waktuMentah = art.timestamp || art.Timestamp || art.waktu || art.Waktu;
-                const tgl = formatIndonesianDate(waktuMentah);
+                const tgl = formatIndonesianDate(art.timestamp || art.Timestamp);
                 
                 return `
                 <div class="article-card p-5 fade-in flex flex-col justify-between" style="animation-delay: ${idx * 0.1}s" onclick="openReadView('${art.id}')">
                     <div>
                         <div class="h-56 mb-5 rounded-[1.8rem] overflow-hidden bg-slate-900 relative">
-                            <img src="${getThumb(art.foto && art.foto.length > 0 ? (Array.isArray(art.foto) ? art.foto[0] : art.foto.split(',')[0]) : "", "w600")}" class="w-full h-full object-cover">
-                            <div class="absolute top-4 left-4 bg-black/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">${art.kategori || "Umum"}</div>
+                            <img src="${getThumb(art.foto[0], "w600")}" class="w-full h-full object-cover">
+                            <div class="absolute top-4 left-4 bg-black/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">${art.kategori}</div>
                         </div>
                         <span class="text-[10px] text-slate-500 font-bold tracking-wider mb-2 block uppercase">${tgl}</span>
                         <h3 class="text-xl font-bold text-white line-clamp-2 px-1 leading-snug mb-5 group-hover:navy-text transition-colors">${art.judul}</h3>
@@ -488,21 +475,17 @@
             document.getElementById('readJudul').innerText = art.judul;
             document.getElementById('readPenulis').innerText = art.penulis;
             
-            const peran = art.peran || art.Peran || art.peran_saat_menulis || art.Peran_Saat_Menulis || '';
-            const detailPeran = art.detail_peran || art.Detail_Peran || '';
-            const displayPeran = peran ? ` • ${peran}${detailPeran ? ' (' + detailPeran + ')' : ''}` : '';
-            
-            const waktuMentah = art.timestamp || art.Timestamp || art.waktu || art.Waktu;
-            const tgl = formatIndonesianDate(waktuMentah);
-
-            document.getElementById('readStats').innerText = `${art.views || 0} VIEW • ${tgl} • ${art.kategori || "Umum"}${displayPeran}`;
-            
-            // Render Avatar 
             const pin = art.pin?.toString().trim();
             const fotoPenulis = authorMap[pin] ? getThumb(authorMap[pin].foto, "w100") : `https://ui-avatars.com/api/?name=${art.penulis}`;
             document.getElementById('readAvatar').innerHTML = `<img src="${fotoPenulis}" class="w-full h-full object-cover">`;
+            
+            const peran = art.peran || art.Peran || art.peran_saat_menulis || art.Peran_Saat_Menulis || '';
+            const detailPeran = art.detail_peran || art.Detail_Peran || '';
+            const displayPeran = peran ? ` • ${peran}${detailPeran ? ' (' + detailPeran + ')' : ''}` : '';
+            const tgl = formatIndonesianDate(art.timestamp || art.Timestamp);
 
-            document.getElementById('readIsi').innerHTML = art.isi ? art.isi.replace(/\n/g, '<br>') : '';
+            document.getElementById('readStats').innerText = `${art.views || 0} VIEW • ${tgl} • ${art.kategori}${displayPeran}`;
+            document.getElementById('readIsi').innerHTML = art.isi.replace(/\n/g, '<br>');
             
             const kreditEl = document.getElementById('readKredit');
             if (art.kredit && art.kredit.trim() !== "") {
@@ -531,139 +514,150 @@
                         <span>${hasReacted ? '❤️' : '🤍'}</span> <span id="reactCount">${art.reactions || 0}</span> REAKSI
                     </button>
                 </div>
-                <button onclick="backToHome()" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-white font-black text-xs py-4 px-6 rounded-xl transition-all tracking-widest uppercase shadow-lg">
+                <button onclick="backToHome()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-black text-xs py-4 px-6 rounded-xl transition-all tracking-widest uppercase shadow-lg">
                     SELESAI BACA & KEMBALI
                 </button>
             `;
 
-            // Media Handler (Foto & Youtube)
+            // Pengaturan Media Utama (Foto / Youtube / Komik)
             const tabsEl = document.getElementById('mediaTabs');
+            currentYoutubeId = getYoutubeId(art.video || art.Video || '');
+            
+            const kategori = (art.kategori || '').toLowerCase();
+            activeKategoriIsKomik = kategori.includes('komik');
+            
             const mediaBox = document.getElementById('mediaBox');
-            const imgSlider = document.getElementById('imageSlider');
-            const videoContent = document.getElementById('videoContent');
-            const readYoutube = document.getElementById('readYoutube');
-            
-            imgSlider.innerHTML = '';
-            imgSlider.style.transform = 'translateX(0)';
-            currentSlide = 0;
-            currentYoutubeId = getYoutubeId(art.youtube || art.Youtube);
-            activeKategoriIsKomik = (art.kategori || "").toLowerCase() === "komik";
-            
-            if (activeKategoriIsKomik) mediaBox.classList.add('comic-mode');
-            else mediaBox.classList.remove('comic-mode');
-
-            let photos = [];
-            if (Array.isArray(art.foto)) photos = art.foto;
-            else if (typeof art.foto === 'string') photos = art.foto.split(',').map(u => u.trim());
-            photos = photos.filter(u => u !== "");
-
-            if (photos.length > 0) {
-                photos.forEach(url => {
-                    imgSlider.innerHTML += `
-                        <div class="slider-item-container">
-                            <img src="${getThumb(url, 'w1200')}" class="slider-item" loading="lazy">
-                        </div>
-                    `;
-                });
-                mediaBox.style.display = 'block';
+            if (activeKategoriIsKomik) {
+                mediaBox.classList.add('comic-mode');
+            } else {
+                mediaBox.classList.remove('comic-mode');
             }
 
-            document.getElementById('prevBtn').style.display = (photos.length > 1 && !activeKategoriIsKomik) ? 'block' : 'none';
-            document.getElementById('nextBtn').style.display = (photos.length > 1 && !activeKategoriIsKomik) ? 'block' : 'none';
+            // Injeksi Foto ke Slider Container
+            const imgSlider = document.getElementById('imageSlider');
+            const fotoArray = Array.isArray(art.foto) ? art.foto : [art.foto];
+            
+            imgSlider.innerHTML = fotoArray.map(imgUrl => `
+                <div class="slider-item-container">
+                    <img src="${getThumb(imgUrl, 'w1200')}" class="slider-item">
+                </div>
+            `).join('');
 
-            if (photos.length > 0 && currentYoutubeId) {
+            currentSlide = 0;
+            updateSliderPosition();
+
+            // Sembunyikan atau Tampilkan Tab YouTube Berdasarkan Ketersediaan Link
+            if (currentYoutubeId) {
                 tabsEl.classList.remove('hidden');
-                switchMedia('foto');
-            } else if (currentYoutubeId) {
-                tabsEl.classList.add('hidden');
-                mediaBox.style.display = 'block';
-                switchMedia('video');
-            } else if (photos.length > 0) {
-                tabsEl.classList.add('hidden');
                 switchMedia('foto');
             } else {
                 tabsEl.classList.add('hidden');
-                mediaBox.style.display = 'none';
+                switchMedia('foto');
             }
 
-            // Memicu Update views ke backend secara sunyi (fire and forget)
-            fetch(`${GAS_URL}?action=addActivity&id=${art.id}&type=view`, { mode: 'no-cors' }).catch(() => {});
+            // Trigger Tambah View Secara Senyap ke GAS
+            fetch(`${GAS_URL}?action=addView&id=${id}`).catch(e => console.log(e));
+        }
+
+        function updateSliderPosition() {
+            const slider = document.getElementById('imageSlider');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const sliderItems = document.querySelectorAll('#imageSlider .slider-item-container');
+            
+            if (activeKategoriIsKomik || sliderItems.length <= 1) {
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+            } else {
+                prevBtn.classList.remove('hidden');
+                nextBtn.classList.remove('hidden');
+            }
+
+            if (!activeKategoriIsKomik) {
+                slider.style.transform = `translateX(-${currentSlide * 100}%)`;
+            } else {
+                slider.style.transform = 'none';
+            }
+        }
+
+        function moveSlide(direction) {
+            const sliderItems = document.querySelectorAll('#imageSlider .slider-item-container');
+            if (sliderItems.length === 0) return;
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = sliderItems.length - 1;
+            if (currentSlide >= sliderItems.length) currentSlide = 0;
+            updateSliderPosition();
         }
 
         function switchMedia(type) {
             const mediaBox = document.getElementById('mediaBox');
-            const tabFoto = document.getElementById('tabFoto');
-            const tabVideo = document.getElementById('tabVideo');
             const sliderContent = document.getElementById('sliderContent');
             const videoContent = document.getElementById('videoContent');
-            const readYoutube = document.getElementById('readYoutube');
+            const tabFoto = document.getElementById('tabFoto');
+            const tabVideo = document.getElementById('tabVideo');
+            const ytEmbed = document.getElementById('readYoutube');
 
-            if (type === 'foto') {
-                sliderContent.classList.remove('hidden');
-                videoContent.classList.add('hidden');
-                readYoutube.innerHTML = ''; // Hentikan video
-                mediaBox.classList.remove('video-active');
-                if (activeKategoriIsKomik) mediaBox.classList.add('comic-mode');
-
-                tabFoto.classList.add('tab-btn-active'); 
-                tabFoto.classList.remove('tab-btn-inactive');
-                tabVideo.classList.add('tab-btn-inactive'); 
-                tabVideo.classList.remove('tab-btn-active');
-            } else {
+            if (type === 'video' && currentYoutubeId) {
+                mediaBox.classList.add('video-active');
                 sliderContent.classList.add('hidden');
                 videoContent.classList.remove('hidden');
-                mediaBox.classList.remove('comic-mode');
-                mediaBox.classList.add('video-active');
-                readYoutube.innerHTML = `<iframe src="https://www.youtube.com/embed/${currentYoutubeId}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
-
-                tabVideo.classList.add('tab-btn-active'); 
+                
                 tabVideo.classList.remove('tab-btn-inactive');
-                tabFoto.classList.add('tab-btn-inactive'); 
+                tabVideo.classList.add('tab-btn-active');
                 tabFoto.classList.remove('tab-btn-active');
-            }
-        }
+                tabFoto.classList.add('tab-btn-inactive');
 
-        function moveSlide(dir) {
-            const container = document.getElementById('imageSlider');
-            const items = container.querySelectorAll('.slider-item-container').length;
-            if (items <= 1) return;
-            currentSlide = (currentSlide + dir + items) % items;
-            container.style.transform = `translateX(-${currentSlide * 100}%)`;
+                ytEmbed.innerHTML = `<iframe class="w-full h-full rounded-2xl" src="https://www.youtube.com/embed/${currentYoutubeId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            } else {
+                mediaBox.classList.remove('video-active');
+                sliderContent.classList.remove('hidden');
+                videoContent.classList.add('hidden');
+                
+                tabFoto.classList.remove('tab-btn-inactive');
+                tabFoto.classList.add('tab-btn-active');
+                tabVideo.classList.remove('tab-btn-active');
+                tabVideo.classList.add('tab-btn-inactive');
+                
+                ytEmbed.innerHTML = '';
+            }
+            updateSliderPosition();
         }
 
         function backToHome() {
-            document.getElementById('readView').classList.add('hidden');
             document.getElementById('homeView').classList.remove('hidden');
-            document.getElementById('readYoutube').innerHTML = ''; // Hentikan video saat ditutup
+            document.getElementById('readView').classList.add('hidden');
+            switchMedia('foto'); // Reset video jika sedang dimainkan
+            applyFiltersAndRender();
         }
 
-        function handleReact(id) {
+        async function handleReact(id) {
             const storageKey = `reacted_count_${id}`;
-            let clicks = parseInt(localStorage.getItem(storageKey)) || 0;
-            if (clicks >= 5) return;
-            
-            clicks++;
-            localStorage.setItem(storageKey, clicks);
-            
-            const btn = document.getElementById('reactBtn');
-            const cnt = document.getElementById('reactCount');
-            cnt.innerText = parseInt(cnt.innerText) + 1;
-            
-            if (clicks >= 5) {
-                btn.className = "flex items-center gap-2 bg-pink-500/10 border border-pink-500 text-pink-400 py-2.5 px-5 rounded-xl text-xs font-bold uppercase tracking-wider cursor-not-allowed opacity-80 shadow-md";
+            let userClicks = parseInt(localStorage.getItem(storageKey)) || 0;
+            if (userClicks >= 5) return;
+
+            try {
+                const btn = document.getElementById('reactBtn');
                 btn.disabled = true;
-                btn.title = "Batas apresiasi tercapai";
-            } else {
-                btn.className = "flex items-center gap-2 bg-pink-500/5 border border-pink-500/50 hover:border-pink-500 text-pink-400 py-2.5 px-5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-md";
-                btn.innerHTML = `<span>❤️</span> <span id="reactCount">${cnt.innerText}</span> REAKSI`;
+                
+                const res = await fetch(`${GAS_URL}?action=react&id=${id}`).then(r => r.json());
+                if (res.result === 'success') {
+                    userClicks++;
+                    localStorage.setItem(storageKey, userClicks);
+                    
+                    // Sinkronisasi data reaksi lokal
+                    const targetArt = allArticles.find(a => a.id === id);
+                    if (targetArt) targetArt.reactions = res.newReactions;
+                    
+                    // Render ulang komponen tombol reaksi
+                    openReadView(id);
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('reactBtn').disabled = false;
             }
-            
-            // Catat reaksi ke sheet
-            fetch(`${GAS_URL}?action=addActivity&id=${id}&type=react`, { mode: 'no-cors' }).catch(() => {});
         }
 
-        // Jalankan inisialisasi awal
-        window.onload = init;
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
