@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Penulis - Portal Literasi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .register-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 840px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .register-header {
+            background: linear-gradient(135deg, #024b8a 0%, #07599c 100%);
+            color: #ffffff;
+            text-align: center;
+            padding: 40px 30px;
+        }
+
+        .register-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .register-header p {
+            font-size: 14px;
+            color: #93c5fd;
+            font-weight: 500;
+        }
+
+        .register-body {
+            padding: 40px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 640px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 640px) {
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #334155;
+            outline: none;
+            transition: all 0.2s;
+            background-color: #ffffff;
+        }
+
+        .form-control:focus {
+            border-color: #07599c;
+            box-shadow: 0 0 0 3px rgba(7, 89, 156, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        .form-control:disabled {
+            background-color: #f8fafc;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* Styling File Upload wrapper */
+        .file-upload-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .file-upload-icon {
+            position: absolute;
+            right: 18px;
+            color: #64748b;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        /* Bagian Kotak PIN Keamanan */
+        .pin-section {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 35px;
+        }
+
+        .pin-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+
+        .pin-header i {
+            color: #07599c;
+        }
+
+        .pin-desc {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .pin-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .pin-input {
+            width: 100%;
+            padding: 14px 45px 14px 18px;
+            letter-spacing: 8px;
+            font-weight: 700;
+            text-align: left;
+        }
+
+        .toggle-pin-btn {
+            position: absolute;
+            right: 18px;
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Tombol Submit */
+        .btn-submit {
+            width: 100%;
+            background-color: #024b8a;
+            color: #ffffff;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background-color 0.2s;
+            box-shadow: 0 4px 12px rgba(2, 75, 138, 0.15);
+        }
+
+        .btn-submit:hover {
+            background-color: #053e70;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 25px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #024b8a;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="register-container">
+        <div class="register-header">
+            <h1>Bergabung Sebagai Penulis</h1>
+            <p>Mari berkontribusi membangun budaya literasi sekolah kita.</p>
+        </div>
+
+        <form class="register-body" id="registrationForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="namaLengkap">Nama Lengkap</label>
+                    <input type="text" id="namaLengkap" class="form-control" placeholder="Misal: Leonardus Yesi" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" class="form-control" placeholder="Email aktif Anda" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="peranSelect">Peran di Sekolah</label>
+                    <select id="peranSelect" class="form-control" required>
+                        <option value="" disabled selected>-- Pilih Peran --</option>
+                        <option value="Siswa">Siswa</option>
+                        <option value="Orang Tua">Orang Tua</option>
+                        <option value="Guru">Guru</option>
+                        <option value="Staf">Staf</option>
+                        <option value="Alumni">Alumni</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label id="dataValidasiLabel" for="dataValidasiInput">Data Validasi</label>
+                    <input type="text" id="dataValidasiInput" class="form-control" placeholder="Pilih peran terlebih dahulu" disabled required>
+                </div>
+
+                <div class="form-group">
+                    <label for="whatsapp">No. WhatsApp</label>
+                    <input type="tel" id="whatsapp" class="form-control" placeholder="Misal: 08123456789" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="fotoProfil">Foto Profil Penulis</label>
+                    <div class="file-upload-wrapper">
+                        <input type="text" id="fotoProfilFake" class="form-control" placeholder="Pilih Foto (Max 2MB)" readonly style="cursor: pointer;">
+                        <input type="file" id="fotoProfil" accept="image/*" style="display: none;">
+                        <i class="fa-solid fa-camera file-upload-icon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pin-section">
+                <div class="pin-header">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Buat PIN Penulis (6 Angka)</span>
+                </div>
+                <div class="pin-desc">
+                    PIN ini akan selalu Anda gunakan setiap kali mengirim naskah. Harap ingat baik-baik.
+                </div>
+                <div class="pin-input-wrapper">
+                    <input type="password" id="pinInput" class="form-control pin-input" maxlength="6" pattern="\d{6}" inputmode="numeric" placeholder="••••••" required>
+                    <button type="button" class="toggle-pin-btn" id="togglePinBtn">
+                        <i class="fa-regular fa-eye-slash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <span>Kirim Pendaftaran</span>
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+
+            <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Kembali ke Beranda</a>
+        </form>
+    </div>
+
+    <script>
+        const peranSelect = document.getElementById('peranSelect');
+        const dataValidasiLabel = document.getElementById('dataValidasiLabel');
+        const dataValidasiInput = document.getElementById('dataValidasiInput');
+        const pinInput = document.getElementById('pinInput');
+        const togglePinBtn = document.getElementById('togglePinBtn');
+        const fotoProfil = document.getElementById('fotoProfil');
+        const fotoProfilFake = document.getElementById('fotoProfilFake');
+
+        // LOGIKA DINAMIS: Mengubah label Data Validasi otomatis berdasarkan Peran yang dipilih
+        peranSelect.addEventListener('change', function() {
+            const peran = this.value;
+            dataValidasiInput.disabled = false;
+            dataValidasiInput.value = ""; // Reset isi input jika peran berganti
+
+            if (peran === "Siswa") {
+                dataValidasiLabel.textContent = "Kelas / NISN";
+                dataValidasiInput.placeholder = "Misal: Kelas XI-B / NISN 0072345...";
+            } else if (peran === "Orang Tua") {
+                dataValidasiLabel.textContent = "Nama Anak & Kelas";
+                dataValidasiInput.placeholder = "Misal: Wali dari Budi (Kelas X-A)";
+            } else if (peran === "Guru") {
+                dataValidasiLabel.textContent = "Mata Pelajaran / NIP";
+                dataValidasiInput.placeholder = "Misal: Guru Matematika";
+            } else if (peran === "Staf") {
+                dataValidasiLabel.textContent = "Unit Tugas / Jabatan";
+                dataValidasiInput.placeholder = "Misal: Staf Tata Usaha / Tim Publikasi";
+            } else if (peran === "Alumni") {
+                dataValidasiLabel.textContent = "Tahun Kelulusan";
+                dataValidasiInput.placeholder = "Misal: Angkatan Kelulusan 2024";
+            } else {
+                dataValidasiLabel.textContent = "Data Validasi";
+                dataValidasiInput.placeholder = "Pilih peran terlebih dahulu";
+                dataValidasiInput.disabled = true;
+            }
+        });
+
+        // Trigger Input File saat Box Fake di-klik
+        fotoProfilFake.addEventListener('click', () => fotoProfil.click());
+        fotoProfil.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                fotoProfilFake.value = this.files[0].name;
+            }
+        });
+
+        // Fitur Intip/Sembunyikan PIN Keamanan (Show/Hide Password)
+        togglePinBtn.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            if (pinInput.type === "password") {
+                pinInput.type = "text";
+                icon.className = "fa-regular fa-eye";
+            } else {
+                pinInput.type = "password";
+                icon.className = "fa-regular fa-eye-slash";
+            }
+        });
+
+        // Validasi input PIN agar hanya menerima angka murni
+        pinInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // Handler saat tombol pendaftaran dikirim (Koneksi ke App Script / DB Anda)
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Siapkan payload objek untuk dikirim ke sistem backend Google Sheets Anda
+            const payload = {
+                nama: document.getElementById('namaLengkap').value,
+                email: document.getElementById('email').value,
+                peran: peranSelect.value, // Akan mengirim string murni "Guru" atau "Staf"
+                dataValidasi: dataValidasiInput.value,
+                whatsapp: document.getElementById('whatsapp').value,
+                pin: pinInput.value
+            };
+
+            console.log("Mengirim Data Pendaftaran:", payload);
+            alert("Pendaftaran Berhasil Dikirim! Peran Anda terdaftar sebagai: " + payload.peran);
+        });
+    </script>
+</body>
+</html>
