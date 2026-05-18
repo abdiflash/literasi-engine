@@ -252,6 +252,11 @@
                 const pin = art.pin?.toString().trim();
                 const fotoPenulis = authorMap[pin] ? getThumb(authorMap[pin].foto, "w100") : `https://ui-avatars.com/api/?name=${art.penulis}`;
                 
+                // Ambil data peran dan detail peran secara fleksibel
+                const peran = art.peran || art.Peran || art.peran_saat_menulis || art.Peran_Saat_Menulis || '';
+                const detailPeran = art.detail_peran || art.Detail_Peran || '';
+                const displayPeran = peran ? `${peran}${detailPeran ? ' • ' + detailPeran : ''}` : '';
+                
                 return `
                 <div class="article-card p-5 fade-in" style="animation-delay: ${idx * 0.1}s" onclick="openReadView('${art.id}')">
                     <div class="h-56 mb-5 rounded-[1.8rem] overflow-hidden bg-slate-900 relative">
@@ -262,7 +267,10 @@
                     <div class="flex items-center justify-between px-1 pt-4 border-t border-slate-700/50">
                         <div class="flex items-center gap-3">
                             <img src="${fotoPenulis}" class="w-8 h-8 rounded-full object-cover border border-slate-600 shadow-sm">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${art.penulis}</span>
+                            <div class="flex flex-col">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${art.penulis}</span>
+                                ${displayPeran ? `<span class="text-[8px] font-semibold text-slate-500 uppercase tracking-wider mt-0.5">${displayPeran}</span>` : ''}
+                            </div>
                         </div>
                         <span class="text-[10px] font-black text-slate-600 tracking-tighter">👁️ ${art.views || 0}</span>
                     </div>
@@ -299,7 +307,13 @@
 
             document.getElementById('readJudul').innerText = art.judul;
             document.getElementById('readPenulis').innerText = art.penulis;
-            document.getElementById('readStats').innerText = `${art.views || 0} VIEW • ${art.kategori}`;
+            
+            // Ambil data peran dan detail peran untuk tampilan detail baca
+            const peran = art.peran || art.Peran || art.peran_saat_menulis || art.Peran_Saat_Menulis || '';
+            const detailPeran = art.detail_peran || art.Detail_Peran || '';
+            const displayPeran = peran ? ` • ${peran}${detailPeran ? ' (' + detailPeran + ')' : ''}` : '';
+
+            document.getElementById('readStats').innerText = `${art.views || 0} VIEW • ${art.kategori}${displayPeran}`;
             document.getElementById('readIsi').innerHTML = art.isi.replace(/\n/g, '<br>');
             
             const kreditEl = document.getElementById('readKredit');
