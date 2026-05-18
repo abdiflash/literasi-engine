@@ -9,11 +9,11 @@
     
     <style>
         :root {
-            --bg-color: #0b1528;
-            --card-bg: #13223c;
+            --bg-color: #0b1325;
+            --card-bg: #132038;
             --primary-blue: #38bdf8;
             --text-main: #ffffff;
-            --text-muted: #94a3b8;
+            --text-muted: #64748b;
             --border-color: #1e293b;
         }
 
@@ -31,13 +31,11 @@
             padding-bottom: 60px;
         }
 
-        /* Navbar */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 6%;
-            border-bottom: 1px solid var(--border-color);
+            padding: 25px 6%;
         }
 
         .logo {
@@ -47,9 +45,8 @@
         }
 
         .logo span {
-            color: var(--text-muted);
+            color: #64748b;
             font-weight: 400;
-            font-style: italic;
         }
 
         .nav-links {
@@ -63,10 +60,9 @@
             text-decoration: none;
             font-size: 14px;
             font-weight: 600;
-            transition: color 0.2s;
         }
 
-        .nav-links a:hover, .nav-links a.active {
+        .nav-links a.active {
             color: var(--primary-blue);
         }
 
@@ -78,16 +74,15 @@
             font-size: 16px;
         }
 
-        /* Hero Section */
         .hero {
             text-align: center;
-            padding: 60px 20px 40px 20px;
+            padding: 40px 20px 20px 20px;
         }
 
         .hero h1 {
-            font-size: 56px;
+            font-size: 64px;
             font-weight: 800;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             letter-spacing: -1px;
         }
 
@@ -95,7 +90,6 @@
             color: var(--primary-blue);
         }
 
-        /* Main Search & Filter Control App */
         .controls-container {
             max-width: 760px;
             margin: 0 auto 40px auto;
@@ -104,7 +98,7 @@
 
         .search-wrapper {
             position: relative;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
 
         .search-wrapper i {
@@ -112,15 +106,15 @@
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--text-muted);
+            color: #475569;
             font-size: 16px;
         }
 
         .search-input {
             width: 100%;
             padding: 16px 20px 16px 55px;
-            background-color: #0f1b33;
-            border: 1px solid var(--border-color);
+            background-color: #0f1a30;
+            border: 1px solid #1e2e4a;
             border-radius: 30px;
             color: var(--text-main);
             font-size: 15px;
@@ -133,15 +127,14 @@
             box-shadow: 0 0 0 1px var(--primary-blue);
         }
 
-        /* Filter Row & Select Dropdowns */
         .filter-settings {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             gap: 20px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 20px;
+            border-bottom: 1px solid #16253f;
+            padding-bottom: 25px;
         }
 
         .role-filters {
@@ -152,43 +145,45 @@
 
         .btn-filter {
             background-color: #162544;
-            color: var(--text-main);
+            color: #94a3b8;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 22px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.2s;
+            letter-spacing: 0.5px;
         }
 
         .btn-filter.active {
-            background-color: var(--primary-blue);
-            color: #000000;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+            background-color: #1e293b;
+            color: var(--primary-blue);
+            border: 1px solid #334155;
         }
 
         .dropdown-group {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
 
         .select-wrapper {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 12px;
+            gap: 10px;
+            font-size: 11px;
             font-weight: 700;
-            color: var(--text-muted);
+            color: #475569;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .select-wrapper select {
-            background-color: #162544;
+            background-color: #0f1a30;
             color: var(--text-main);
-            border: 1px solid var(--border-color);
+            border: 1px solid #1e2e4a;
             padding: 8px 16px;
             border-radius: 8px;
             font-size: 13px;
@@ -197,7 +192,6 @@
             cursor: pointer;
         }
 
-        /* Grid Feed Content */
         .content-section {
             max-width: 1200px;
             margin: 0 auto;
@@ -222,7 +216,7 @@
 
         .card:hover {
             transform: translateY(-4px);
-            border-color: #22375e;
+            border-color: #1e3354;
         }
 
         .card-banner {
@@ -232,19 +226,13 @@
             background-color: #0b1424;
         }
 
-        .card-banner img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
         .badge-category {
             position: absolute;
             top: 15px;
             left: 15px;
-            background-color: rgba(30, 41, 59, 0.85);
+            background-color: rgba(30, 41, 59, 0.8);
             backdrop-filter: blur(4px);
-            color: var(--text-main);
+            color: #cbd5e1;
             padding: 6px 14px;
             border-radius: 20px;
             font-size: 11px;
@@ -262,10 +250,10 @@
         }
 
         .card-title {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
             line-height: 1.4;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             color: var(--text-main);
         }
 
@@ -297,16 +285,19 @@
         }
 
         .author-name {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
         }
 
         .author-role {
-            font-size: 11px;
-            color: var(--text-muted);
+            font-size: 10px;
+            color: #475569;
             margin-top: 2px;
+            font-weight: 600;
+            text-transform: uppercase;
         }
 
         .view-count {
@@ -314,51 +305,19 @@
             align-items: center;
             gap: 6px;
             font-size: 12px;
-            color: var(--text-muted);
+            color: #475569;
         }
 
-        /* Feedback Status */
         .status-message {
             text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-            font-weight: 600;
-            font-size: 15px;
-            letter-spacing: 0.5px;
+            padding: 80px 20px;
+            color: #475569;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 1px;
             text-transform: uppercase;
             width: 100%;
             grid-column: 1 / -1;
-        }
-
-        /* Pagination */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-top: 50px;
-        }
-
-        .page-link {
-            background-color: #162544;
-            color: var(--text-main);
-            border: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background 0.2s;
-        }
-
-        .page-link.active {
-            background-color: var(--primary-blue);
-            color: #000000;
-        }
-
-        .page-link:hover:not(.active) {
-            background-color: #1f335a;
         }
     </style>
 </head>
@@ -381,7 +340,7 @@
         <section class="controls-container">
             <div class="search-wrapper">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" class="search-input" placeholder="Cari karya, penulis, atau teks tanggal...">
+                <input type="text" id="searchInput" class="search-input" placeholder="Cari karya, penulis, atau bulan/tahun...">
             </div>
 
             <div class="filter-settings">
@@ -425,26 +384,21 @@
         <section class="content-section">
             <div class="grid-container" id="feedGrid">
                 </div>
-
-            <div class="pagination" id="paginationContainer">
-                </div>
         </section>
     </main>
 
     <script>
-        // MOCK DATA (Representasi dari Database Google Sheets Anda)
-        // Memastikan string peran mencakup variasi seperti "Guru/Staf" agar aman saat ditarik.
+        // Data Dummy Terintegrasi Sesuai Gambar Database Sheets & Redaksi Anda
         const mockDatabase = [
             {
                 id: "ART-97BD539E",
-                timestamp: "5/14/2026 14:10",
+                timestamp: "5/14/2026 14:10", // Format asli DB: Bulan/Hari/Tahun
                 judul: "Raungan Taring Baja Eps. 1",
                 kategori: "Komik & Ilustrasi",
                 penulis: "Leonardus Yesiabdi",
                 peran: "Orang Tua",
-                detailPeran: "Ortu Abilah Husain",
-                banner: "image_8b233a.jpg", // atau link Google Drive terkompresi
-                views: 24,
+                detailPeran: "ORTU • ABILAH HUSAIN",
+                views: 29,
                 avatar: "https://i.pravatar.cc/100?img=33"
             },
             {
@@ -453,40 +407,41 @@
                 judul: "Desain Rumah Minimalis",
                 kategori: "Fotografi",
                 penulis: "Leonardus Yesi",
-                peran: "Guru/Staf", // Terbaca di DB Redaksi sebagai Guru/Staf
-                detailPeran: "Guru/Staf • Publikasi",
-                banner: "image_8b233a.jpg",
+                peran: "Guru/Staf", // Sesuai data string dari database di image_ce3c67.png
+                detailPeran: "GURU/STAF • PUBLIKASI",
                 views: 9,
                 avatar: "https://i.pravatar.cc/100?img=12"
             },
             {
                 id: "ART-11QA902C",
                 timestamp: "5/12/2026 11:15",
-                judul: "Tes Artikel Literasi",
+                judul: "Tes",
                 kategori: "Artikel Umum",
                 penulis: "Leonardus Yesiabdi",
                 peran: "Orang Tua",
-                detailPeran: "Orang Tua",
-                banner: "image_cdd7ea.jpg",
+                detailPeran: "ORANG TUA",
                 views: 4,
                 avatar: "https://i.pravatar.cc/100?img=33"
             }
         ];
 
-        // State Aplikasi Global
+        // Daftar nama bulan bahasa Indonesia untuk konversi pencarian teks tanggal
+        const namaBulanIndo = [
+            "januari", "februari", "maret", "april", "mei", "juni", 
+            "juli", "agustus", "september", "oktober", "november", "desember"
+        ];
+
         let currentRole = "all";
         let currentCategory = "all";
         let currentSort = "terbaru";
         let searchQuery = "";
 
-        // DOM Elements
         const feedGrid = document.getElementById('feedGrid');
         const searchInput = document.getElementById('searchInput');
         const categorySelect = document.getElementById('categorySelect');
         const sortSelect = document.getElementById('sortSelect');
         const roleButtons = document.querySelectorAll('#roleFilterGroup .btn-filter');
 
-        // Fungsi Memrender Kartu ke Grid
         function renderFeed(data) {
             feedGrid.innerHTML = "";
             
@@ -501,8 +456,8 @@
                 card.innerHTML = `
                     <div class="card-banner">
                         <span class="badge-category">${getShortCategory(item.kategori)}</span>
-                        <div style="width:100%; height:100%; background:#1a2b4c; display:flex; align-items:center; justify-content:center; color:#475569;">
-                            <i class="fa-regular fa-image" font-size: 24px;></i>
+                        <div style="width:100%; height:100%; background:#1a273f; display:flex; align-items:center; justify-content:center; color:#334155;">
+                            <i class="fa-regular fa-image" style="font-size: 28px;"></i>
                         </div>
                     </div>
                     <div class="card-body">
@@ -526,7 +481,6 @@
             });
         }
 
-        // Helper mempersingkat nama kategori panjang di tag badge
         function getShortCategory(fullCategory) {
             if(fullCategory.includes("Komik")) return "Komik";
             if(fullCategory.includes("Fotografi")) return "Fotografi";
@@ -534,34 +488,47 @@
             return fullCategory;
         }
 
-        // CORE ENGINE: Logika Filter & Pencarian Komprehensif
+        // ENGINE RESPONSif: Memperbaiki Filter Peran & Pencarian Bulan/Tahun
         function filterAndSortData() {
             let filtered = [...mockDatabase];
 
-            // 1. Filter Berdasarkan Peran (Dengan perbaikan pengecekan Guru/Staf)
+            // 1. Logika Perbaikan Filter Peran (Menggabungkan Guru & Guru/Staf)
             if (currentRole !== "all") {
                 filtered = filtered.filter(item => {
                     if (currentRole === "Guru") {
-                        // Jika klik tombol "GURU", data bertuliskan "Guru", "Staf", atau "Guru/Staf" harus lolos filter.
+                        // Jika menekan tombol 'GURU', data bertuliskan 'Guru' maupun 'Guru/Staf' otomatis lolos penyaringan
                         return item.peran.toLowerCase().includes('guru') || item.peran.toLowerCase().includes('staf');
                     }
                     return item.peran.toLowerCase() === currentRole.toLowerCase();
                 });
             }
 
-            // 2. Filter Berdasarkan Kategori Dropdown
+            // 2. Filter Kategori Dropdown
             if (currentCategory !== "all") {
                 filtered = filtered.filter(item => item.kategori === currentCategory);
             }
 
-            // 3. Filter Berdasarkan Kolom Pencarian Input
+            // 3. Logika Mutakhir Pencarian Multi-Keyword (Judul, Penulis, Bulan, Tahun)
             if (searchQuery.trim() !== "") {
                 const query = searchQuery.toLowerCase().trim();
+                
                 filtered = filtered.filter(item => {
+                    // Pecah timestamp (contoh: "5/14/2026 14:10") untuk ekstraksi waktu
+                    const parts = item.timestamp.split(' ')[0].split('/');
+                    const itemBulanAngka = parseInt(parts[0]); // 5
+                    const itemHari = parts[1];                 // 14
+                    const itemTahun = parts[2];                // 2026
+                    const itemNamaBulan = namaBulanIndo[itemBulanAngka - 1] || ""; // "mei"
+
+                    // Cek apakah query pengguna mencocokkan kriteria teks tanggal biasa/nama bulan
+                    const matchTanggal = itemTahun.includes(query) || 
+                                         itemNamaBulan.includes(query) || 
+                                         `${itemHari} ${itemNamaBulan}`.includes(query) ||
+                                         `${itemNamaBulan} ${itemTahun}`.includes(query);
+
                     return item.judul.toLowerCase().includes(query) || 
                            item.penulis.toLowerCase().includes(query) || 
-                           item.timestamp.toLowerCase().includes(query) ||
-                           item.kategori.toLowerCase().includes(query);
+                           matchTanggal;
                 });
             }
 
@@ -575,11 +542,9 @@
             renderFeed(filtered);
         }
 
-        // --- Event Listeners Setup ---
-
-        // Event Klik Tombol Peran
+        // --- Pemicu Event Kontrol ---
         roleButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
+            button.addEventListener('click', () => {
                 roleButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 currentRole = button.getAttribute('data-role');
@@ -587,25 +552,22 @@
             });
         });
 
-        // Event Ganti Dropdown Kategori
         categorySelect.addEventListener('change', (e) => {
             currentCategory = e.target.value;
             filterAndSortData();
         });
 
-        // Event Ganti Dropdown Urutan
         sortSelect.addEventListener('change', (e) => {
             currentSort = e.target.value;
             filterAndSortData();
         });
 
-        // Event Input Kolom Pencarian (Real-time pencarian)
         searchInput.addEventListener('input', (e) => {
             searchQuery = e.target.value;
             filterAndSortData();
         });
 
-        // Inisialisasi Pertama Kali Halaman Dimuat
+        // Tampilkan data saat pertama kali aplikasi dimuat
         document.addEventListener("DOMContentLoaded", () => {
             filterAndSortData();
         });
