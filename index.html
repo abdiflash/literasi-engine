@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jendela Inspirasi - Sistem Pencarian Fleksibel</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        p.subtitle {
+            color: #7f8c8d;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #3498db;
+        }
+        .card-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .card {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .card h3 {
+            margin: 0 0 8px 0;
+            color: #2980b9;
+        }
+        .card p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .date-badge {
+            display: inline-block;
+            background: #e1f5fe;
+            color: #0288d1;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        .no-data {
+            grid-column: span 2;
+            text-align: center;
+            padding: 30px;
+            color: #e74c3c;
+            font-weight: bold;
+            background: #fdf2f2;
+            border-radius: 6px;
+            border: 1px dashed #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Jendela Inspirasi</h2>
+    <p class="subtitle">Ketik nama bulan (maret, mei), angka (3, 5), atau tahun (2026) untuk memfilter karya.</p>
+
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Cari berdasarkan judul, nama bulan, atau tahun (yyyy)..." onkeyup="jalankanPencarian()">
+    </div>
+
+    <div class="card-container" id="karyaContainer">
+        </div>
+</div>
+
+<script>
+    // 1. Data Dummy Karya (Sesuai dengan struktur tanggapan/rilis Anda)
+    const daftarKarya = [
+        { id: 1, judul: "Karya Seni Abstrak", deskripsi: "Eksplorasi warna cerah", tanggal: "2026-03-15" }, // Maret 2026
+        { id: 2, judul: "Desain UI/UX Mobile", deskripsi: "Aplikasi e-commerce modern", tanggal: "2026-04-10" }, // April 2026
+        { id: 3, judul: "Fotografi Arsitektur", deskripsi: "Sudut kota Jakarta kuno", tanggal: "2026-05-22" }, // Mei 2026
+        { id: 4, judul: "Ilustrasi Digital Fantasi", deskripsi: "Naga di atas gunung awan", tanggal: "2025-05-01" }, // Mei 2025
+        { id: 5, judul: "Tes Sistem Baru v3", deskripsi: "Uji coba fungsional fitur", tanggal: "2026-01-18" }  // Januari 2026
+    ];
+
+    // 2. Fungsi Helper: Konversi Teks Nama Bulan Menjadi Angka (1 - 12)
+    function dapatkanAngkaBulan(inputTeks) {
+        const daftarBulan = {
+            januari: 1, jan: 1,
+            februari: 2, feb: 2,
+            maret: 3, mar: 3,
+            april: 4, apr: 4,
+            mei: 5,
+            juni: 6, jun: 6,
+            juli: 7, jul: 7,
+            agustus: 8, agu: 8, ags: 8,
+            september: 9, sep: 9,
+            oktober: 10, okt: 10,
+            november: 11, nov: 11,
+            desember: 12, des: 12
+        };
+        return daftarBulan[inputTeks.toLowerCase().trim()] || null;
+    }
+
+    // 3. Fungsi Helper: Validasi format tahun 4 digit (Contoh: 2000 - 2099)
+    function apakahInputTahun(inputTeks) {
+        const regexTahun = /^(20)\d{2}$/;
+        return regexTahun.test(inputTeks.trim());
+    }
+
+    // 4. Fungsi Utama Pencarian dan Render Data
+    function jalankanPencarian() {
+        const kataKunci = document.getElementById('searchInput').value.trim();
+        const container = document.getElementById('karyaContainer');
+        container.innerHTML = ''; // Reset tampilan container
+
+        // Cari tahu apakah user input bulan atau tahun
+        let cariAngkaBulan = dapatkanAngkaBulan(kataKunci);
+        let cariTahun = apakahInputTahun(kataKunci) ? parseInt(kataKunci) : null;
+
+        // Jika user mengetik angka langsung (misal: 3 atau 5)
+        if (!cariAngkaBulan && /^\d+$/.test(kataKunci)) {
+            const angka = parseInt(kataKunci);
+            if (angka >= 1 && angka <= 12) {
+                cariAngkaBulan = angka;
+            }
+        }
+
+        // Lakukan filter data
+        const hasilFilter = daftarKarya.filter(karya => {
+            // Pecah tanggal objek ("2026-05-22") menjadi variabel Date
+            const objekTanggal = new Date(karya.tanggal);
+            const bulanKarya = objekTanggal.getMonth() + 1; // getMonth() dimulai dari 0 (Januari = 0)
+            const tahunKarya = objekTanggal.getFullYear();
+
+            // Pengecekan kondisi pencarian:
+            const cocokJudul = karya.judul.toLowerCase().includes(kataKunci.toLowerCase());
+            const cocokDeskripsi = karya.deskripsi.toLowerCase().includes(kataKunci.toLowerCase());
+            const cocokBulan = (cariAngkaBulan !== null && bulanKarya === cariAngkaBulan);
+            const cocokTahun = (cariTahun !== null && tahunKarya === cariTahun);
+
+            // Tampilkan jika cocok dengan teks judul/deskripsi, ATAU cocok bulan, ATAU cocok tahun
+            return cocokJudul || cocokDeskripsi || cocokBulan || cocokTahun;
+        });
+
+        // 5. Tampilkan hasil ke halaman HTML
+        if (hasilFilter.length === 0) {
+            container.innerHTML = `<div class="no-data">KARYA TIDAK DITEMUKAN</div>`;
+        } else {
+            hasilFilter.forEach(karya => {
+                // Format tanggal agar lebih manusiawi saat dibaca di kartu
+                const opsiFormat = { year: 'numeric', month: 'long', day: 'numeric' };
+                const tanggalFormatId = new Date(karya.tanggal).toLocaleDateString('id-ID', opsiFormat);
+
+                const cardHtml = `
+                    <div class="card">
+                        <h3>${karya.judul}</h3>
+                        <p>${karya.deskripsi}</p>
+                        <span class="date-badge">${tanggalFormatId}</span>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+    }
+
+    // Jalankan pencarian pertama kali saat halaman dimuat (menampilkan semua data)
+    window.onload = jalankanPencarian;
+</script>
+
+</body>
+</html>
