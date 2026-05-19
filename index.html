@@ -99,7 +99,7 @@
                         <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                    </div >
+                    </div>
                     <input type="text" id="searchInput" oninput="applyFiltersAndRender()" placeholder="Cari karya, penulis, atau bulan/tahun..." class="w-full bg-slate-800/50 border border-slate-700 text-white py-4 pl-14 pr-6 rounded-2xl focus:ring-2 focus:ring-[#38bdf8] outline-none transition-all shadow-lg">
                 </div>
             </div>
@@ -218,12 +218,12 @@
         let filteredArticles = [];
         let authorMap = {};
         let currentPage = 1;
-        const LIMIT = 9; // Grid 3x3 Membutuhkan Batas 9 Item
+        const LIMIT = 9; 
         let currentSlide = 0;
         let currentYoutubeId = null;
         let activeKategoriIsKomik = false;
 
-        // State Filter Baru
+        // State Filter
         let currentSelectedRole = 'Semua';
         let currentSelectedCategory = 'Semua';
 
@@ -242,12 +242,11 @@
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
-        // Helper Konversi Tanggal Kompleks untuk Pengurutan Akurat (Fix Terlama/Terbaru)
+        // Helper Parsing Tanggal untuk Keperluan Sorting Akurat
         function parseToValidDate(timestampStr) {
             if (!timestampStr) return new Date(0);
             const str = String(timestampStr).trim();
 
-            // Saring format lokal DD/MM/YYYY terlebih dahulu agar tidak tertukar menjadi format US (MM/DD/YYYY) oleh browser
             const parts = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
             if (parts) {
                 const day = parseInt(parts[1], 10);
@@ -262,7 +261,7 @@
             return new Date(0);
         }
 
-        // Helper Pencarian Waktu
+        // Helper Konversi ke Format Indonesia (Tampilan)
         function formatIndonesianDate(timestampStr) {
             if (!timestampStr) return "";
             try {
@@ -274,6 +273,48 @@
             } catch (e) {
                 return String(timestampStr);
             }
+        }
+
+        // --- NEW HELPER: FORMAT TANGGAL DD/MM/YYYY UNTUK DITAMPILKAN DI CARD ---
+        function formatToDDMMYYYY(timestampStr) {
+            if (!timestampStr) return "-";
+            const str = String(timestampStr).trim();
+            
+            const parts = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+            if (parts) {
+                const day = parts[1].padStart(2, '0');
+                const month = parts[2].padStart(2, '0');
+                let year = parts[3];
+                if (year.length === 2) year = "20" + year;
+                return `${day}/${month}/${year}`;
+            }
+            
+            const d = new Date(timestampStr);
+            if (!isNaN(d.getTime())) {
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+            return str;
+        }
+
+        // --- NEW HELPER: MEMBUAT TEXT PENALARAN TANGGAL AGAR PENCARIAN BULAN SEPERTI "MEI" AKURAT ---
+        function getSearchableDateText(timestampStr) {
+            if (!timestampStr) return "";
+            let d = parseToValidDate(timestampStr);
+            if (isNaN(d.getTime()) || d.getTime() === 0) return String(timestampStr).toLowerCase();
+            
+            const months = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+            const monthsShort = ["jan", "feb", "mar", "apr", "mei", "jun", "jul", "agu", "sep", "okt", "nov", "des"];
+            
+            const day = d.getDate();
+            const monthLong = months[d.getMonth()];
+            const monthShortStr = monthsShort[d.getMonth()];
+            const year = d.getFullYear();
+            const numericForm = `${String(day).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${year}`;
+            
+            return `${day} ${monthLong} ${year} ${monthShortStr} ${numericForm}`;
         }
 
         async function init() {
@@ -288,17 +329,13 @@
                 const artRes = await fetch(GAS_URL).then(r => r.json());
                 if (artRes.result === "success") {
                     allArticles = artRes.data;
-                    
-                    // Render Dropdown Kategori dari Data Sheets
                     renderCategoryDropdown(artRes.categories);
-                    
-                    // Filter Pertama Kali
                     applyFiltersAndRender();
                 }
             } catch (e) { console.error("Error Loading:", e); }
         }
 
-        // --- CORE FILTER ENGINE (FIX SINKRONISASI PENCARIAN & URUTAN) --- //
+        // --- CORE FILTER ENGINE (FIX SINKRONISASI PENCARIAN BULAN & TANGGAL) --- //
         function applyFiltersAndRender() {
             const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
             const sortOrder = document.getElementById('sort-select').value;
@@ -308,43 +345,22 @@
             filteredArticles = allArticles.filter(art => {
                 const peran = (art.peran || art.Peran || art.peran_saat_menulis || art.Peran_Saat_Menulis || '').toLowerCase();
                 const matchRole = (currentSelectedRole === 'Semua') || (peran === currentSelectedRole.toLowerCase());
-                
                 const matchCategory = (currentSelectedCategory === 'Semua') || ((art.kategori || '').toLowerCase() === currentSelectedCategory.toLowerCase());
-                
                 return matchRole && matchCategory;
             });
 
-            // 2. Saring Pencarian Teks & Tanggal (Bulan / Tahun)
+            // 2. Saring Pencarian Teks & Tanggal (Bulan / Tahun Terintegrasi)
             if (searchQuery !== "") {
-                const monthsMap = {
-                    januari: 0, jan: 0, februari: 1, feb: 1, maret: 2, mar: 2,
-                    april: 3, apr: 3, mei: 4, juni: 5, jun: 5, juli: 6, jul: 6,
-                    agustus: 7, agu: 7, ags: 7, september: 8, sep: 8,
-                    oktober: 9, okt: 9, november: 10, nov: 10, desember: 11, des: 11
-                };
-
-                const searchMonth = monthsMap[searchQuery] !== undefined ? monthsMap[searchQuery] : null;
-                const searchYear = /^\d{4}$/.test(searchQuery) ? parseInt(searchQuery, 10) : null;
-
                 filteredArticles = filteredArticles.filter(art => {
-                    const tgl = formatIndonesianDate(art.timestamp || art.Timestamp).toLowerCase();
                     const judul = (art.judul || "").toLowerCase();
                     const penulis = (art.penulis || "").toLowerCase();
                     const isi = (art.isi || "").toLowerCase();
-
-                    // Validasi kecocokan pencarian nama bulan atau angka tahun dari data waktu asli
-                    let matchWaktuSpesifik = false;
-                    const dObj = parseToValidDate(art.timestamp || art.Timestamp);
-                    if (dObj.getTime() !== 0) {
-                        if (searchMonth !== null && dObj.getMonth() === searchMonth) matchWaktuSpesifik = true;
-                        if (searchYear !== null && dObj.getFullYear() === searchYear) matchWaktuSpesifik = true;
-                    }
+                    const dateSearchText = getSearchableDateText(art.timestamp || art.Timestamp);
 
                     return judul.includes(searchQuery) || 
                            penulis.includes(searchQuery) || 
                            isi.includes(searchQuery) || 
-                           tgl.includes(searchQuery) ||
-                           matchWaktuSpesifik;
+                           dateSearchText.includes(searchQuery);
                 });
             }
 
@@ -361,13 +377,10 @@
 
         function filterByRole(roleName) {
             currentSelectedRole = roleName;
-            
-            // Ubah Warna Tombol Peran
             const buttons = document.querySelectorAll('.role-btn');
             buttons.forEach(btn => {
                 const btnText = btn.textContent.trim().toLowerCase();
                 const targetRole = roleName.toLowerCase();
-                
                 if (btnText === targetRole || (targetRole === 'semua' && btnText === 'semua peran')) {
                     btn.classList.add('bg-[#38bdf8]', 'text-slate-900');
                     btn.classList.remove('bg-slate-800', 'text-slate-300');
@@ -376,7 +389,6 @@
                     btn.classList.add('bg-slate-800', 'text-slate-300');
                 }
             });
-
             applyFiltersAndRender();
         }
 
@@ -412,9 +424,10 @@
                 const peran = art.peran || art.Peran || art.peran_saat_menulis || art.Peran_Saat_Menulis || '';
                 const detailPeran = art.detail_peran || art.Detail_Peran || '';
                 const displayPeran = peran ? `${peran}${detailPeran ? ' • ' + detailPeran : ''}` : '';
-                const tgl = formatIndonesianDate(art.timestamp || art.Timestamp);
                 
-                // Ambil foto pertama dengan aman (jika format berupa array atau string pisahan koma)
+                // Ambil format dd/mm/yyyy dari timestamp
+                const tglFormatted = formatToDDMMYYYY(art.timestamp || art.Timestamp);
+                
                 let firstPhoto = "";
                 if (art.foto) {
                     if (Array.isArray(art.foto) && art.foto.length > 0) firstPhoto = art.foto[0];
@@ -428,7 +441,7 @@
                             <img src="${getThumb(firstPhoto, "w600")}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/800x450/1e293b/64748b?text=Portal+Literasi'">
                             <div class="absolute top-4 left-4 bg-black/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">${art.kategori || 'Umum'}</div>
                         </div>
-                        <span class="text-[10px] text-slate-500 font-bold tracking-wider mb-2 block uppercase">${tgl}</span>
+                        <span class="text-[10px] text-slate-400 font-bold tracking-wider mb-2 block">Tanggal ditayangkan (${tglFormatted})</span>
                         <h3 class="text-xl font-bold text-white line-clamp-2 px-1 leading-snug mb-5 hover:text-[#38bdf8] transition-colors">${art.judul}</h3>
                     </div>
                     <div class="flex items-center justify-between px-1 pt-4 border-t border-slate-700/50 mt-auto">
@@ -455,7 +468,6 @@
             
             if (totalPages <= 1) return;
 
-            // Tombol PREV
             const prevDisabled = currentPage === 1;
             container.insertAdjacentHTML('beforeend', `
                 <button onclick="changePage(${currentPage - 1})" ${prevDisabled ? 'disabled' : ''} 
@@ -464,7 +476,6 @@
                 </button>
             `);
 
-            // Nomor Halaman
             for (let i = 1; i <= totalPages; i++) {
                 const isCurrent = i === currentPage;
                 container.insertAdjacentHTML('beforeend', `
@@ -475,7 +486,6 @@
                 `);
             }
 
-            // Tombol NEXT
             const nextDisabled = currentPage === totalPages;
             container.insertAdjacentHTML('beforeend', `
                 <button onclick="changePage(${currentPage + 1})" ${nextDisabled ? 'disabled' : ''} 
@@ -489,7 +499,6 @@
             const totalPages = Math.ceil(filteredArticles.length / LIMIT);
             if (targetPage < 1 || targetPage > totalPages) return;
             currentPage = targetPage;
-            
             document.getElementById('searchInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
             renderPage();
         }
@@ -532,17 +541,72 @@
 
             document.getElementById('readStats').innerText = `${art.views || 0} VIEW • ${tgl} • ${art.kategori}${displayPeran}`;
             
-            // Render Artikel Ke Kontainer Utama
+            const slider = document.getElementById('imageSlider');
+            slider.innerHTML = '';
+            currentSlide = 0;
+            slider.style.transform = 'translateX(0)';
+
+            let photos = [];
+            if (art.foto) {
+                if (Array.isArray(art.foto)) photos = art.foto;
+                else if (typeof art.foto === 'string') photos = art.foto.split(',').map(p => p.trim()).filter(p => p);
+            }
+
+            if (photos.length > 0) {
+                slider.innerHTML = photos.map(p => `
+                    <div class="slider-item-container">
+                        <img src="${getThumb(p, 'w1200')}" class="slider-item" onerror="this.src='https://via.placeholder.com/800x450/1e293b/64748b?text=Portal+Literasi'">
+                    </div>
+                `).join('');
+            } else {
+                slider.innerHTML = `<div class="slider-item-container"><img src="https://via.placeholder.com/800x450/1e293b/64748b?text=Portal+Literasi" class="slider-item"></div>`;
+            }
+
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            if (photos.length > 1) {
+                prevBtn.classList.remove('hidden');
+                nextBtn.classList.remove('hidden');
+            } else {
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+            }
+
+            currentYoutubeId = getYoutubeId(art.video || art.Video || art.link_youtube || art.Link_Youtube);
+            const mediaTabs = document.getElementById('mediaTabs');
+            const mediaBox = document.getElementById('mediaBox');
+
+            activeKategoriIsKomik = (art.kategori || '').toLowerCase().includes('komik');
+            if (activeKategoriIsKomik) {
+                mediaBox.classList.add('comic-mode');
+            } else {
+                mediaBox.classList.remove('comic-mode');
+            }
+
+            if (currentYoutubeId) {
+                mediaTabs.classList.remove('hidden');
+                switchMedia('foto');
+            } else {
+                mediaTabs.classList.add('hidden');
+                switchMedia('foto');
+            }
+
+            const kreditEl = document.getElementById('readKredit');
+            if (art.kredit_foto || art.Kredit_Foto) {
+                kreditEl.innerText = `Kredit Gambar: ${art.kredit_foto || art.Kredit_Foto}`;
+                kreditEl.classList.remove('hidden');
+            } else {
+                kreditEl.classList.add('hidden');
+            }
+
             const readIsiEl = document.getElementById('readIsi');
             readIsiEl.innerHTML = art.isi ? art.isi.replace(/\n/g, '<br>') : '';
             
-            // --- LOGIKA PERBAIKAN LINK OTOMATIS (LINK FIXER ENGINE) ---
             const links = readIsiEl.getElementsByTagName('a');
             for (let i = 0; i < links.length; i++) {
                 let hrefValue = links[i].getAttribute('href');
                 if (hrefValue) {
                     hrefValue = hrefValue.trim();
-                    // Jika teks link tidak diawali http:// atau https://, paksa tambahkan https://
                     if (!/^https?:\/\//i.test(hrefValue)) {
                         links[i].setAttribute('href', 'https://' + hrefValue);
                     }
@@ -550,7 +614,45 @@
             }
         }
 
-        // Jalankan inisialisasi aplikasi saat dokumen siap
+        function backToHome() {
+            document.getElementById('readView').classList.add('hidden');
+            document.getElementById('homeView').classList.remove('hidden');
+            document.getElementById('readYoutube').innerHTML = '';
+        }
+
+        function switchMedia(type) {
+            const tabFoto = document.getElementById('tabFoto');
+            const tabVideo = document.getElementById('tabVideo');
+            const sliderContent = document.getElementById('sliderContent');
+            const videoContent = document.getElementById('videoContent');
+            const mediaBox = document.getElementById('mediaBox');
+
+            if (type === 'foto') {
+                tabFoto.className = 'flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-active';
+                tabVideo.className = 'flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-inactive';
+                sliderContent.classList.remove('hidden');
+                videoContent.classList.add('hidden');
+                mediaBox.classList.remove('video-active');
+            } else {
+                tabFoto.className = 'flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-inactive';
+                tabVideo.className = 'flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-active';
+                sliderContent.classList.add('hidden');
+                videoContent.classList.remove('hidden');
+                mediaBox.classList.add('video-active');
+                if (currentYoutubeId) {
+                    document.getElementById('readYoutube').innerHTML = `<iframe class="w-full h-full rounded-2xl" src="https://www.youtube.com/embed/${currentYoutubeId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                }
+            }
+        }
+
+        function moveSlide(direction) {
+            const slider = document.getElementById('imageSlider');
+            const items = slider.children.length;
+            if (items <= 1) return;
+            currentSlide = (currentSlide + direction + items) % items;
+            slider.style.transform = `translateX(-${currentSlide * 100}%)`;
+        }
+
         window.onload = init;
     </script>
 </body>
