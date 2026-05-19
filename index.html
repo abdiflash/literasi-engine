@@ -16,7 +16,7 @@
         .article-card { background: var(--card-dark); border: 1px solid var(--border-dark); transition: all 0.3s ease; cursor: pointer; border-radius: 2.5rem; }
         .article-card:hover { transform: translateY(-8px); border-color: var(--navy-light); }
         
-        /* Wadah Media Utama Standar (Artikel/Cerpen/Esai) */
+        /* Wadah Media Utama Standar */
         .media-box { position: relative; width: 100%; aspect-ratio: 16/10; background: #020617; border-radius: 2rem; border: 1px solid var(--border-dark); overflow: hidden; }
         .slider-container { display: flex; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; }
         .slider-item-container { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 0.5rem; }
@@ -100,7 +100,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <input type="text" id="searchInput" oninput="applyFiltersAndRender()" placeholder="Cari karya, penulis, atau bulan/tahun..." class="w-full bg-slate-800/50 border border-slate-700 text-white py-4 pl-14 pr-6 rounded-2xl focus:ring-2 focus:ring-[#38bdf8] outline-none transition-all shadow-lg">
+                    <input type="text" id="searchInput" oninput="applyFiltersAndRender()" placeholder="Cari karya, penulis, nama bulan, atau tahun..." class="w-full bg-slate-800/50 border border-slate-700 text-white py-4 pl-14 pr-6 rounded-2xl focus:ring-2 focus:ring-[#38bdf8] outline-none transition-all shadow-lg">
                 </div>
             </div>
 
@@ -213,7 +213,6 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxx87Qzy4VYYqnXET71EQc5cP_3ax9x4-sgLS8vEssE376fnSiOgfB91590qoBZ0kE-rA/exec";
         
-        // State Variables
         let allArticles = [];
         let filteredArticles = [];
         let authorMap = {};
@@ -223,7 +222,6 @@
         let currentYoutubeId = null;
         let activeKategoriIsKomik = false;
 
-        // State Filter
         let currentSelectedRole = 'Semua';
         let currentSelectedCategory = 'Semua';
 
@@ -242,129 +240,133 @@
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
-        // --- ENGINE UNTUK MENDETEKSI VARIASI NAMA KOLOM TIMESTAMP / TANGGAL ---
+        // 1. SMART SCANNER UNTUK MENEMUKAN DATA TANGGAL DI GOOGLE SHEET
         function getTimestampValue(art) {
             if (!art) return "";
+            
+            // Cek kecocokan langsung yang umum
             if (art.timestamp) return art.timestamp;
             if (art.Timestamp) return art.Timestamp;
+            if (art.tanggal) return art.tanggal;
+            if (art.Tanggal) return art.Tanggal;
             
-            // Pindai otomatis jika ada variasi nama kolom dari Google Sheet
+            // Deteksi otomatis jika kolom menggunakan variasi nama lain
             const keys = Object.keys(art);
             for (let key of keys) {
-                const lowerKey = key.toLowerCase();
-                if (lowerKey === 'timestamp' || lowerKey === 'tanggal' || lowerKey === 'date' || lowerKey === 'waktu') {
+                const lowerKey = key.toLowerCase().trim();
+                if (lowerKey.includes('time') || lowerKey.includes('tgl') || lowerKey.includes('date') || lowerKey.includes('waktu') || lowerKey.includes('merek') || lowerKey.includes('tayang')) {
                     return art[key];
                 }
             }
+            
+            // Fallback terakhir jika data mentah ada kemiripan format penulisan tanggal
             for (let key of keys) {
-                const lowerKey = key.toLowerCase();
-                if (lowerKey.includes('time') || lowerKey.includes('tgl') || lowerKey.includes('date') || lowerKey.includes('waktu')) {
+                const valStr = String(art[key]).trim();
+                if (/^\d{1,4}[\/\-\s]\d{1,2}[\/\-\s]\d{2,4}/.test(valStr)) {
                     return art[key];
                 }
             }
             return "";
         }
 
-        // Helper Parsing Tanggal untuk Keperluan Sorting Akurat
-        function parseToValidDate(timestampStr) {
-            if (!timestampStr) return new Date(0);
-            const str = String(timestampStr).trim();
-            if (str === "" || str === "undefined" || str === "null") return new Date(0);
+        // 2. ENGINE PARSING TANGGAL KUAT (MENDUKUNG BULAN INDONESIA: MEI, AGUSTUS, DLL)
+        function parseToValidDate(val) {
+            if (!val) return new Date(0);
+            let str = String(val).toLowerCase().trim();
+            if (str === "" || str === "undefined" || str === "null" || str === "-") return new Date(0);
 
+            const idMonths = ["jan", "feb", "mar", "apr", "mei", "jun", "jul", "agu", "sep", "okt", "nov", "des"];
+            const idMonthsLong = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+            
+            // Konversi teks nama bulan lokal Indonesia menjadi indeks waktu objek javascript
+            for (let i = 0; i < 12; i++) {
+                if (str.includes(idMonthsLong[i]) || str.includes(idMonths[i]) || (i === 7 && str.includes("ags"))) {
+                    const nums = str.match(/\d+/g);
+                    if (nums && nums.length >= 2) {
+                        let day = parseInt(nums[0], 10);
+                        let year = parseInt(nums[1], 10);
+                        let foundYear = nums.find(n => n.length === 4);
+                        if (foundYear) {
+                            year = parseInt(foundYear, 10);
+                            if (nums[0] !== foundYear) {
+                                day = parseInt(nums[0], 10);
+                            } else if (nums.length > 1) {
+                                day = parseInt(nums[1], 10);
+                            }
+                        }
+                        return new Date(year, i, day);
+                    }
+                }
+            }
+
+            // ISO standard YYYY-MM-DD
             if (/^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/.test(str)) {
                 const d = new Date(str);
                 if (!isNaN(d.getTime())) return d;
             }
 
+            // Format angka biasa DD/MM/YYYY atau MM/DD/YYYY
             const parts = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
             if (parts) {
-                let day = parseInt(parts[1], 10);
-                let month = parseInt(parts[2], 10) - 1;
+                let p1 = parseInt(parts[1], 10);
+                let p2 = parseInt(parts[2], 10);
                 let year = parseInt(parts[3], 10);
                 if (year < 100) year += year < 50 ? 2000 : 1900;
                 
-                if (month > 11) {
-                    const temp = day;
-                    day = month + 1;
-                    month = temp - 1;
+                let day = p1;
+                let month = p2 - 1;
+                if (p2 > 12) { // Jika kolom kedua > 12 berarti otomatis system MM/DD/YYYY
+                    day = p2;
+                    month = p1 - 1;
                 }
                 return new Date(year, month, day);
             }
 
-            let d = new Date(timestampStr);
+            let d = new Date(val);
             if (!isNaN(d.getTime())) return d;
             return new Date(0);
         }
 
-        // Helper Konversi ke Format Indonesia (Tampilan Detail)
+        // Format Tampilan Indonesia pada Detail Artikel
         function formatIndonesianDate(timestampStr) {
-            if (!timestampStr) return "";
-            try {
-                let d = parseToValidDate(timestampStr);
-                if (d.getTime() === 0) return String(timestampStr);
-                
-                const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-                return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-            } catch (e) {
-                return String(timestampStr);
-            }
+            const d = parseToValidDate(timestampStr);
+            if (d.getTime() === 0) return String(timestampStr || "-");
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
         }
 
-        // Helper Format Tanggal dd/mm/yyyy untuk Ditampilkan di Card
+        // Format Tampilan Teks Ringkas dd/mm/yyyy pada Card Depan
         function formatToDDMMYYYY(timestampStr) {
-            if (!timestampStr) return "-";
-            const str = String(timestampStr).trim();
-            if (str === "" || str === "undefined" || str === "null") return "-";
-            
-            const parts = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-            if (parts) {
-                if (parts[1].length === 4) {
-                    const year = parts[1];
-                    const month = parts[2].padStart(2, '0');
-                    const dayMatch = str.match(/^\d{4}[\/\-]\d{1,2}[\/\-](\d{1,2})/);
-                    const day = dayMatch ? dayMatch[1].padStart(2, '0') : '01';
-                    return `${day}/${month}/${year}`;
-                } else {
-                    let day = parts[1].padStart(2, '0');
-                    let month = parts[2].padStart(2, '0');
-                    let year = parts[3];
-                    if (year.length === 2) year = "20" + year;
-                    
-                    if (parseInt(month, 10) > 12) {
-                        const temp = day;
-                        day = month;
-                        month = temp;
-                    }
-                    return `${day}/${month}/${year}`;
-                }
-            }
-            
-            const d = new Date(timestampStr);
-            if (!isNaN(d.getTime())) {
-                const day = String(d.getDate()).padStart(2, '0');
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const year = d.getFullYear();
-                return `${day}/${month}/${year}`;
-            }
-            return str;
+            const d = parseToValidDate(timestampStr);
+            if (d.getTime() === 0) return "-";
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
         }
 
-        // Helper Teks Penalaran Tanggal Agar Pencarian Bulan Seperti "Mei" Akurat
+        // 3. ENGINE KUNCI PENCARIAN TEKS BULAN DAN TAHUN SECARA AKURAT
         function getSearchableDateText(timestampStr) {
             if (!timestampStr) return "";
             let d = parseToValidDate(timestampStr);
-            if (isNaN(d.getTime()) || d.getTime() === 0) return String(timestampStr).toLowerCase();
+            if (isNaN(d.getTime()) || d.getTime() === 0) {
+                return String(timestampStr).toLowerCase();
+            }
             
             const months = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
             const monthsShort = ["jan", "feb", "mar", "apr", "mei", "jun", "jul", "agu", "sep", "okt", "nov", "des"];
             
             const day = d.getDate();
-            const monthLong = months[d.getMonth()];
-            const monthShortStr = monthsShort[d.getMonth()];
+            const monthIndex = d.getMonth();
+            const monthLong = months[monthIndex];
+            const monthShortStr = monthsShort[monthIndex];
             const year = d.getFullYear();
-            const numericForm = `${String(day).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${year}`;
             
-            return `${day} ${monthLong} ${year} ${monthShortStr} ${numericForm}`;
+            const padDay = String(day).padStart(2, '0');
+            const padMonth = String(monthIndex + 1).padStart(2, '0');
+            
+            // Menyusun bank teks agar saat user ketik "Mei", "05", ataupun "2026", semuanya cocok.
+            return `${day} ${monthLong} ${year} ${monthShortStr} ${padDay}/${padMonth}/${year} ${year}`;
         }
 
         async function init() {
@@ -385,7 +387,6 @@
             } catch (e) { console.error("Error Loading:", e); }
         }
 
-        // --- CORE FILTER ENGINE --- //
         function applyFiltersAndRender() {
             const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
             const sortOrder = document.getElementById('sort-select').value;
@@ -403,11 +404,15 @@
                     const judul = (art.judul || "").toLowerCase();
                     const penulis = (art.penulis || "").toLowerCase();
                     const isi = (art.isi || "").toLowerCase();
+                    const kategori = (art.kategori || "").toLowerCase();
+                    
+                    // Membaca tanggal hasil generate engine cerdas
                     const dateSearchText = getSearchableDateText(getTimestampValue(art));
 
                     return judul.includes(searchQuery) || 
                            penulis.includes(searchQuery) || 
                            isi.includes(searchQuery) || 
+                           kategori.includes(searchQuery) ||
                            dateSearchText.includes(searchQuery);
                 });
             }
@@ -451,7 +456,6 @@
             });
         }
 
-        // --- RENDER GRID ENGINE --- //
         function renderPage() {
             const grid = document.getElementById('articleGrid');
             const start = (currentPage - 1) * LIMIT;
@@ -472,7 +476,7 @@
                 const detailPeran = art.detail_peran || art.Detail_Peran || '';
                 const displayPeran = peran ? `${peran}${detailPeran ? ' • ' + detailPeran : ''}` : '';
                 
-                // Ambil nilai tanggal dengan sistem Smart Auto-Detect
+                // Menampilkan Tanggal Hasil Konversi dd/mm/yyyy di Depan Card
                 const tglFormatted = formatToDDMMYYYY(getTimestampValue(art));
                 
                 let firstPhoto = "";
@@ -507,7 +511,6 @@
             updatePagination();
         }
 
-        // --- SYSTEM PAGINATION BUILDER --- //
         function updatePagination() {
             const container = document.getElementById('paginationContainer');
             container.innerHTML = "";
@@ -550,7 +553,6 @@
             renderPage();
         }
 
-        // --- COMPONENT LEADERBOARD --- //
         function renderLeaderboard(data) {
             const list = document.getElementById('leaderboardList');
             const top10 = [...data].sort((a, b) => (b.poin || 0) - (a.poin || 0)).slice(0, 10);
@@ -569,7 +571,6 @@
             `).join('');
         }
 
-        // --- READ VIEW HANDLING --- //
         function openReadView(id) {
             const art = allArticles.find(a => a.id === id);
             if (!art) return;
@@ -584,6 +585,8 @@
             const peran = art.peran || art.Peran || art.peran_saat_menulis || art.Peran_Saat_Menulis || '';
             const detailPeran = art.detail_peran || art.Detail_Peran || '';
             const displayPeran = peran ? ` • ${peran}${detailPeran ? ' (' + detailPeran + ')' : ''}` : '';
+            
+            // Format Hari Bulan Berbahasa Indonesia Lengkap untuk Tampilan Baca Detail
             const tgl = formatIndonesianDate(getTimestampValue(art));
 
             document.getElementById('readStats').innerText = `${art.views || 0} VIEW • ${tgl} • ${art.kategori}${displayPeran}`;
