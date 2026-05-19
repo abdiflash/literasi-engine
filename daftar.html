@@ -344,16 +344,14 @@
         const fotoProfil = document.getElementById('fotoProfil');
         const fotoProfilFake = document.getElementById('fotoProfilFake');
         
-        // Elemen tambahan untuk OTP
         const btnKirimOTP = document.getElementById('btnKirimOTP');
         const boxOTP = document.getElementById('boxOTP');
         const inputOTP = document.getElementById('inputOTP');
-        let kodeOTPServer = ""; // Variabel penyimpan OTP
+        let kodeOTPServer = ""; 
 
         // URL Web App GAS Anda
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxx87Qzy4VYYqnXET71EQc5cP_3ax9x4-sgLS8vEssE376fnSiOgfB91590qoBZ0kE-rA/exec";
 
-        // LOGIKA DINAMIS: Mengubah label Data Validasi
         peranSelect.addEventListener('change', function() {
             const peran = this.value;
             dataValidasiInput.disabled = false;
@@ -381,11 +379,9 @@
             }
         });
 
-        // Trigger Input File
         fotoProfilFake.addEventListener('click', () => fotoProfil.click());
         fotoProfil.addEventListener('change', function() {
             if (this.files && this.files[0]) {
-                // Peringatan ukuran file max 2MB (opsional tapi disarankan)
                 if(this.files[0].size > 2 * 1024 * 1024) {
                     alert("Ukuran foto maksimal 2MB. Silakan pilih foto yang lebih kecil.");
                     this.value = "";
@@ -396,7 +392,6 @@
             }
         });
 
-        // Show/Hide PIN
         togglePinBtn.addEventListener('click', function() {
             const icon = this.querySelector('i');
             if (pinInput.type === "password") {
@@ -408,12 +403,11 @@
             }
         });
 
-        // Validasi angka murni
         pinInput.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
 
-        // Fungsi Convert Foto ke Base64 (WAJIB ADA)
+        // FUNGSI CONVERT FOTO (Sangat Penting)
         function getBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -423,9 +417,7 @@
             });
         }
 
-        // ==========================================
-        // FITUR BARU: LOGIKA PENGIRIMAN KODE OTP
-        // ==========================================
+        // HANDLER KIRIM OTP
         btnKirimOTP.addEventListener('click', function() {
             const emailValue = document.getElementById('email').value;
             const namaValue = document.getElementById('namaLengkap').value;
@@ -453,8 +445,8 @@
             .then(data => {
                 if (data.result === "success") {
                     alert("Kode OTP berhasil dikirim ke " + emailValue + "!\nCek Kotak Masuk atau folder Spam/Promosi Anda.");
-                    kodeOTPServer = data.otp; // Simpan ke memori
-                    boxOTP.style.display = "block"; // Tampilkan form input OTP
+                    kodeOTPServer = data.otp; 
+                    boxOTP.style.display = "block"; 
                     this.innerText = "Kirim Ulang";
                 } else {
                     alert("Gagal kirim OTP: " + data.message);
@@ -470,13 +462,10 @@
             });
         });
 
-        // ==========================================
-        // HANDLER UTAMA: PENGIRIMAN PENDAFTARAN
-        // ==========================================
+        // HANDLER SUBMIT PENDAFTARAN
         document.getElementById('registrationForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // 1. Cek status OTP
             if (!kodeOTPServer) {
                 alert("Anda belum melakukan verifikasi email. Klik tombol 'Kirim OTP' terlebih dahulu.");
                 return;
@@ -488,35 +477,30 @@
                 return;
             }
 
-            // 2. State Loading Tombol
             const btnSubmit = this.querySelector('.btn-submit');
             const originalText = btnSubmit.innerHTML;
             btnSubmit.innerHTML = '<span>Memproses...</span> <i class="fa-solid fa-spinner fa-spin"></i>';
             btnSubmit.disabled = true;
 
-            // 3. Proses Convert Foto (Jika ada)
+            // Proses Convert Foto
             let fotoBase64Data = "";
-            let fotoNameData = "";
             if (fotoProfil.files.length > 0) {
                 const file = fotoProfil.files[0];
                 fotoBase64Data = await getBase64(file);
-                fotoNameData = file.name;
             }
 
-            // 4. Siapkan Data (Payload)
+            // PERBAIKAN: Payload Disesuaikan 100% dengan Google Script Database Anda
             const payload = {
                 action: "daftar", 
                 nama: document.getElementById('namaLengkap').value,
                 email: document.getElementById('email').value,
                 peran: peranSelect.value, 
-                unitTugas: dataValidasiInput.value, // Disesuaikan dengan key backend Anda
+                dataValidasi: document.getElementById('dataValidasiInput').value, 
                 whatsapp: document.getElementById('whatsapp').value,
                 pin: pinInput.value,
-                fotoProfilBase64: fotoBase64Data, // Data foto yang sebelumnya kurang
-                fotoProfilName: fotoNameData      // Nama foto yang sebelumnya kurang
+                fotoBase64: fotoBase64Data // Nama kunci diperbaiki menjadi fotoBase64
             };
 
-            // 5. Eksekusi fetch pendaftaran akhir
             fetch(WEB_APP_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain" },
@@ -527,9 +511,8 @@
                 if (data.result === "success") {
                     alert("Selamat! Pendaftaran Berhasil. Data Anda telah masuk ke database.");
                     this.reset();
-                    fotoProfilFake.value = ""; // Reset fake input
+                    fotoProfilFake.value = ""; 
                     
-                    // Reset UI OTP
                     kodeOTPServer = ""; 
                     boxOTP.style.display = "none";
                     btnKirimOTP.innerText = "Kirim OTP";
