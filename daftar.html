@@ -225,6 +225,27 @@
         .back-link:hover {
             color: #024b8a;
         }
+
+        /* Styling tambahan untuk Tombol OTP */
+        .btn-otp {
+            padding: 0 16px;
+            background-color: #024b8a;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-otp:hover {
+            background-color: #053e70;
+        }
+        .btn-otp:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -243,8 +264,17 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" class="form-control" placeholder="Email aktif Anda" required>
+                    <label for="email">Email Aktif</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="email" id="email" class="form-control" placeholder="Email aktif Anda" style="flex: 1;" required>
+                        <button type="button" id="btnKirimOTP" class="btn-otp">Kirim OTP</button>
+                    </div>
+                </div>
+
+                <div class="form-group full-width" id="boxOTP" style="display: none; background: #f0f9ff; padding: 15px 20px; border-radius: 12px; border: 1px dashed #024b8a;">
+                    <label for="inputOTP" style="color: #024b8a; font-size: 14px; margin-bottom: 4px;">Masukkan 6 Digit Kode OTP</label>
+                    <input type="text" id="inputOTP" class="form-control" maxlength="6" placeholder="Cek kotak masuk/spam email Anda" style="text-align: center; font-size: 18px; letter-spacing: 5px; font-weight: bold;">
+                    <small style="color: #64748b; margin-top: 8px; display: block;">*Kami telah mengirimkan kode verifikasi ke email Anda. <b>Harap isi PIN Keamanan di bawah terlebih dahulu jika belum.</b></small>
                 </div>
 
                 <div class="form-group">
@@ -312,12 +342,21 @@
         const togglePinBtn = document.getElementById('togglePinBtn');
         const fotoProfil = document.getElementById('fotoProfil');
         const fotoProfilFake = document.getElementById('fotoProfilFake');
+        
+        // Elemen tambahan untuk OTP
+        const btnKirimOTP = document.getElementById('btnKirimOTP');
+        const boxOTP = document.getElementById('boxOTP');
+        const inputOTP = document.getElementById('inputOTP');
+        let kodeOTPServer = ""; // Variabel penyimpan OTP
 
-        // LOGIKA DINAMIS: Mengubah label Data Validasi otomatis berdasarkan Peran yang dipilih
+        // URL Web App GAS Anda
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxx87Qzy4VYYqnXET71EQc5cP_3ax9x4-sgLS8vEssE376fnSiOgfB91590qoBZ0kE-rA/exec";
+
+        // LOGIKA DINAMIS: Mengubah label Data Validasi
         peranSelect.addEventListener('change', function() {
             const peran = this.value;
             dataValidasiInput.disabled = false;
-            dataValidasiInput.value = ""; // Reset isi input jika peran berganti
+            dataValidasiInput.value = ""; 
 
             if (peran === "Siswa") {
                 dataValidasiLabel.textContent = "Kelas / NISN";
@@ -341,7 +380,7 @@
             }
         });
 
-        // Trigger Input File saat Box Fake di-klik
+        // Trigger Input File
         fotoProfilFake.addEventListener('click', () => fotoProfil.click());
         fotoProfil.addEventListener('change', function() {
             if (this.files && this.files[0]) {
@@ -349,7 +388,7 @@
             }
         });
 
-        // Fitur Intip/Sembunyikan PIN Keamanan (Show/Hide Password)
+        // Show/Hide PIN
         togglePinBtn.addEventListener('click', function() {
             const icon = this.querySelector('i');
             if (pinInput.type === "password") {
@@ -361,24 +400,84 @@
             }
         });
 
-        // Validasi input PIN agar hanya menerima angka murni
+        // Validasi angka murni
         pinInput.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
 
-        // ADJUSMENT: Handler Utama Pengiriman Data dengan Fitur Deteksi Duplikasi
+        // ==========================================
+        // FITUR BARU: LOGIKA PENGIRIMAN KODE OTP
+        // ==========================================
+        btnKirimOTP.addEventListener('click', function() {
+            const emailValue = document.getElementById('email').value;
+            const namaValue = document.getElementById('namaLengkap').value;
+            const pinValue = pinInput.value;
+
+            if (!namaValue || !emailValue || !pinValue) {
+                alert("Mohon isi Nama Lengkap, Email, dan PIN (di bagian bawah) terlebih dahulu sebelum meminta OTP.");
+                return;
+            }
+
+            this.disabled = true;
+            this.innerText = "Mengirim...";
+
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({
+                    action: "sendOTP",
+                    email: emailValue,
+                    nama: namaValue,
+                    pin: pinValue
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.result === "success") {
+                    alert("Kode OTP berhasil dikirim ke " + emailValue + "!\nCek Kotak Masuk atau folder Spam/Promosi Anda.");
+                    kodeOTPServer = data.otp; // Simpan ke memori
+                    boxOTP.style.display = "block"; // Tampilkan form input OTP
+                    this.innerText = "Kirim Ulang";
+                } else {
+                    alert("Gagal kirim OTP: " + data.message);
+                    this.innerText = "Kirim OTP";
+                }
+                this.disabled = false;
+            })
+            .catch(err => {
+                console.error("Error OTP:", err);
+                alert("Kendala jaringan. Pastikan koneksi internet stabil.");
+                this.disabled = false;
+                this.innerText = "Kirim OTP";
+            });
+        });
+
+        // ==========================================
+        // HANDLER UTAMA: PENGIRIMAN PENDAFTARAN
+        // ==========================================
         document.getElementById('registrationForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // 1. Ubah visual tombol menjadi state memproses (Loading)
+            // 1. Cek status OTP
+            if (!kodeOTPServer) {
+                alert("Anda belum melakukan verifikasi email. Klik tombol 'Kirim OTP' terlebih dahulu.");
+                return;
+            }
+
+            const userOTP = inputOTP.value.trim();
+            if (userOTP !== kodeOTPServer) {
+                alert("Kode OTP salah atau tidak valid! Periksa kembali angka yang dikirim ke email Anda.");
+                return;
+            }
+
+            // 2. State Loading Tombol
             const btnSubmit = this.querySelector('.btn-submit');
             const originalText = btnSubmit.innerHTML;
             btnSubmit.innerHTML = '<span>Memproses...</span> <i class="fa-solid fa-spinner fa-spin"></i>';
             btnSubmit.disabled = true;
 
-            // 2. Kumpulkan data masukan dari elemen HTML form
             const payload = {
-                action: "daftar", // Menegaskan aksi pendaftaran
+                action: "daftar", 
                 nama: document.getElementById('namaLengkap').value,
                 email: document.getElementById('email').value,
                 peran: peranSelect.value, 
@@ -387,43 +486,36 @@
                 pin: pinInput.value
             };
 
-            // =========================================================================
-            // PENTING: Pastikan URL Web App Google Apps Script Anda sudah benar
-            // =========================================================================
-            const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxx87Qzy4VYYqnXET71EQc5cP_3ax9x4-sgLS8vEssE376fnSiOgfB91590qoBZ0kE-rA/exec";
-
-            // 3. Tembak data ke Google Apps Script tanpa 'no-cors' agar bisa membaca respon server
+            // 3. Eksekusi fetch pendaftaran akhir
             fetch(WEB_APP_URL, {
                 method: "POST",
-                headers: {
-                    // Menggunakan text/plain untuk menghindari pemblokiran CORS Preflight oleh Google
-                    "Content-Type": "text/plain"
-                },
+                headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify(payload)
             })
-            .then(res => res.json()) // Mengubah hasil respon Google Script menjadi objek JSON
+            .then(res => res.json())
             .then(data => {
                 if (data.result === "success") {
-                    // Jika sukses dan belum ada duplikasi
-                    alert("Pendaftaran Berhasil Dikirim! Data Anda telah masuk ke database.");
-                    this.reset(); // Bersihkan isi formulir kembali ke awal
+                    alert("Selamat! Pendaftaran Berhasil. Data Anda telah masuk ke database.");
+                    this.reset();
                     
-                    // Kembalikan tampilan input Data Validasi ke default terkunci
+                    // Reset UI OTP
+                    kodeOTPServer = ""; 
+                    boxOTP.style.display = "none";
+                    btnKirimOTP.innerText = "Kirim OTP";
+                    
                     dataValidasiLabel.textContent = "Data Validasi";
                     dataValidasiInput.placeholder = "Pilih peran terlebih dahulu";
                     dataValidasiInput.disabled = true;
                 } else {
-                    // KOTAK NOTICE: Menampilkan pesan error spesifik dari Google Script (Misal: "PIN sudah digunakan.")
                     alert("Pendaftaran Gagal: " + data.message);
                 }
                 
-                // Kembalikan visual tombol utama setelah selesai proses
                 btnSubmit.innerHTML = originalText;
                 btnSubmit.disabled = false;
             })
             .catch(error => {
                 console.error("Error pendaftaran gagal:", error);
-                alert("Terjadi kendala jaringan atau URL Web App salah. Silakan periksa kembali.");
+                alert("Terjadi kendala jaringan saat mendaftar. Silakan periksa kembali.");
                 
                 btnSubmit.innerHTML = originalText;
                 btnSubmit.disabled = false;
