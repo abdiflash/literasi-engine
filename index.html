@@ -82,9 +82,21 @@
         }
 
         .content-section { max-width: 1200px; margin: 0 auto; padding: 0 4%; }
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 30px; }
+        
+        /* PERBAIKAN: Grid 3x3 layout */
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 30px; 
+        }
 
-        /* PERBAIKAN: Bungkus link agar card bisa diklik seluruhnya */
+        @media (max-width: 992px) {
+            .grid-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .grid-container { grid-template-columns: 1fr; }
+        }
+
         .card-link {
             text-decoration: none;
             color: inherit;
@@ -128,6 +140,26 @@
             text-align: center; padding: 80px 20px; color: #475569; font-weight: 700;
             font-size: 14px; letter-spacing: 1px; text-transform: uppercase; width: 100%; grid-column: 1 / -1;
         }
+
+        /* PERBAIKAN: Style Pagination */
+        .pagination {
+            display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 40px;
+        }
+        .page-btn {
+            background-color: #162544; color: #94a3b8; border: 1px solid #1e2e4a;
+            width: 38px; height: 38px; border-radius: 8px; font-size: 14px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .page-btn.active {
+            background-color: var(--primary-blue); color: #000; border-color: var(--primary-blue);
+        }
+        .page-btn:hover:not(.active):not(:disabled) {
+            background-color: #1e3354; color: #fff;
+        }
+        .page-btn:disabled {
+            opacity: 0.5; cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -158,6 +190,7 @@
                     <button class="btn-filter" data-role="Siswa">Siswa</button>
                     <button class="btn-filter" data-role="Orang Tua">Orang Tua</button>
                     <button class="btn-filter" data-role="Guru">Guru</button>
+                    <button class="btn-filter" data-role="Staf">Staf</button>
                     <button class="btn-filter" data-role="Alumni">Alumni</button>
                 </div>
 
@@ -191,8 +224,8 @@
         </section>
 
         <section class="content-section">
-            <div class="grid-container" id="feedGrid">
-                </div>
+            <div class="grid-container" id="feedGrid"></div>
+            <div class="pagination" id="paginationContainer"></div>
         </section>
     </main>
 
@@ -207,7 +240,7 @@
                 penulis: "Leonardus Yesiabdi",
                 peran: "Orang Tua",
                 detailPeran: "ORTU • ABILAH HUSAIN",
-                link_foto_1: "https://drive.google.com/file/d/1HHdWi_HGMMVSdjr58rR-uorBp1-PvEk0/view?usp=drivesdk", // Link Asli dari G-Sheets
+                link_foto_1: "https://drive.google.com/file/d/1HHdWi_HGMMVSdjr58rR-uorBp1-PvEk0/view?usp=drivesdk",
                 views: 29,
                 avatar: "https://i.pravatar.cc/100?img=33"
             },
@@ -219,7 +252,7 @@
                 penulis: "Leonardus Yesi",
                 peran: "Guru/Staf",
                 detailPeran: "GURU/STAF • PUBLIKASI",
-                link_foto_1: "https://drive.google.com/file/d/1kay7BScd-LbURxXjoZrQ8XdB5RQNOKfj/view?usp=drivesdk", // Contoh link lain
+                link_foto_1: "https://drive.google.com/file/d/1kay7BScd-LbURxXjoZrQ8XdB5RQNOKfj/view?usp=drivesdk",
                 views: 9,
                 avatar: "https://i.pravatar.cc/100?img=12"
             },
@@ -231,7 +264,7 @@
                 penulis: "Budi Santoso",
                 peran: "Siswa",
                 detailPeran: "SISWA • KELAS X-A",
-                link_foto_1: "", // Tanpa gambar
+                link_foto_1: "",
                 views: 4,
                 avatar: "https://i.pravatar.cc/100?img=11"
             }
@@ -246,24 +279,38 @@
         let currentCategory = "all";
         let currentSort = "terbaru";
         let searchQuery = "";
+        
+        // PERBAIKAN: Variabel Pagination
+        let currentPage = 1;
+        const itemsPerPage = 9; // Menampilkan 9 item (3x3 grid) per halaman
+        let currentFilteredData = [];
 
         const feedGrid = document.getElementById('feedGrid');
+        const paginationContainer = document.getElementById('paginationContainer');
         const searchInput = document.getElementById('searchInput');
         const categorySelect = document.getElementById('categorySelect');
         const sortSelect = document.getElementById('sortSelect');
         const roleButtons = document.querySelectorAll('#roleFilterGroup .btn-filter');
 
-        // PERBAIKAN 1: Fungsi untuk mengubah Link Google Drive Viewer menjadi Tautan Thumbnail Download
+        // Fungsi Link Google Drive Viewer 
         function getDriveDirectLink(driveUrl) {
             if (!driveUrl) return null;
-            // Ekstrak ID File dari URL Google Drive
             const match = driveUrl.match(/\/d\/(.+?)\//);
             if (match && match[1]) {
                 const fileId = match[1];
-                // Konversi menjadi link export view agar bisa dibaca tag <img>
                 return `https://drive.google.com/uc?export=view&id=${fileId}`;
             }
-            return driveUrl; // Kembalikan url asli jika bukan link g-drive standar
+            return driveUrl;
+        }
+
+        // PERBAIKAN: Update Display hanya merender data sesuai Halaman (Pagination)
+        function updateDisplay() {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = currentFilteredData.slice(startIndex, endIndex);
+            
+            renderFeed(pageData);
+            renderPagination(currentFilteredData.length);
         }
 
         function renderFeed(data) {
@@ -276,10 +323,8 @@
 
             data.forEach(item => {
                 const card = document.createElement('div');
-                // Mengkonversi link
                 const directImageUrl = getDriveDirectLink(item.link_foto_1);
                 
-                // Jika gambar berhasil diproses, pasang tag <img>. Jika kosong/gagal, tampilkan ikon fallback.
                 const imageHTML = directImageUrl 
                     ? `<img src="${directImageUrl}" alt="Thumbnail Karya" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                        <div class="fallback-icon" style="display:none; width:100%; height:100%; background:#1a273f; align-items:center; justify-content:center; color:#334155;">
@@ -289,7 +334,6 @@
                            <i class="fa-regular fa-image" style="font-size: 28px;"></i>
                        </div>`;
 
-                // PERBAIKAN 2: Bungkus seluruh struktur card dalam tag <a> agar bisa diklik
                 card.innerHTML = `
                     <a href="baca.html?id=${item.id}" class="card-link">
                         <div class="card">
@@ -320,6 +364,39 @@
             });
         }
 
+        // PERBAIKAN: Fungsi Render Pagination
+        function renderPagination(totalItems) {
+            paginationContainer.innerHTML = "";
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            if (totalPages <= 1) return; // Sembunyikan pagination jika hanya 1 halaman
+
+            // Tombol Prev
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'page-btn';
+            prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; updateDisplay(); } };
+            paginationContainer.appendChild(prevBtn);
+
+            // Tombol Angka Halaman
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.innerText = i;
+                pageBtn.onclick = () => { currentPage = i; updateDisplay(); };
+                paginationContainer.appendChild(pageBtn);
+            }
+
+            // Tombol Next
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'page-btn';
+            nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; updateDisplay(); } };
+            paginationContainer.appendChild(nextBtn);
+        }
+
         function getShortCategory(fullCategory) {
             if(fullCategory.includes("Komik")) return "Komik";
             if(fullCategory.includes("Fotografi")) return "Fotografi";
@@ -332,10 +409,12 @@
 
             if (currentRole !== "all") {
                 filtered = filtered.filter(item => {
-                    if (currentRole === "Guru") {
-                        return item.peran.toLowerCase().includes('guru') || item.peran.toLowerCase().includes('staf');
-                    }
-                    return item.peran.toLowerCase() === currentRole.toLowerCase();
+                    const dbRole = item.peran.toLowerCase();
+                    const reqRole = currentRole.toLowerCase();
+                    // PERBAIKAN: Pisahkan pencarian antara Guru dan Staf jika digabung di database "Guru/Staf"
+                    if (reqRole === "guru") return dbRole.includes('guru');
+                    if (reqRole === "staf") return dbRole.includes('staf');
+                    return dbRole === reqRole;
                 });
             }
 
@@ -343,22 +422,28 @@
                 filtered = filtered.filter(item => item.kategori === currentCategory);
             }
 
-            // PERBAIKAN 3: Merakit tanggal menjadi string utuh sebelum dicocokkan dengan input
+            // PERBAIKAN: Algoritma Pencarian Tanggal Diperkuat
             if (searchQuery.trim() !== "") {
                 const query = searchQuery.toLowerCase().trim();
                 
                 filtered = filtered.filter(item => {
-                    const parts = item.timestamp.split(' ')[0].split('/');
-                    const itemBulanAngka = parseInt(parts[0]);
-                    const itemHari = parts[1];
-                    const itemTahun = parts[2];
-                    const itemNamaBulan = namaBulanIndo[itemBulanAngka - 1] || "";
-
-                    // Kita merakit tanggal menjadi kalimat yang bisa dibaca ("14 mei 2026")
-                    const stringTanggalLengkap = `${itemHari} ${itemNamaBulan} ${itemTahun}`;
-                    const stringBulanTahun = `${itemNamaBulan} ${itemTahun}`;
+                    let stringTanggalLengkap = "";
+                    let stringBulanTahun = "";
                     
-                    // Cek apakah KALIMAT TANGGAL YANG DIRAKIT mengandung KEYWORD YANG DIKETIK
+                    // Ekstrak tanggal (Abaikan waktu jika ada spasi)
+                    const dateOnly = item.timestamp.split(' ')[0];
+                    const parts = dateOnly.split('/');
+                    
+                    if(parts.length === 3) {
+                        const month = parseInt(parts[0]);
+                        const day = parts[1];
+                        const year = parts[2];
+                        const monthName = namaBulanIndo[month - 1] || "";
+                        
+                        stringTanggalLengkap = `${day} ${monthName} ${year}`;
+                        stringBulanTahun = `${monthName} ${year}`;
+                    }
+
                     const matchTanggal = stringTanggalLengkap.includes(query) || 
                                          stringBulanTahun.includes(query) ||
                                          item.timestamp.includes(query);
@@ -375,7 +460,9 @@
                 filtered.sort((a, b) => b.views - a.views);
             }
 
-            renderFeed(filtered);
+            currentFilteredData = filtered;
+            currentPage = 1; // Kembali ke halaman 1 setiap kali filter diubah
+            updateDisplay();
         }
 
         roleButtons.forEach(button => {
