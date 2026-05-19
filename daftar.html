@@ -366,22 +366,60 @@
             this.value = this.value.replace(/[^0-9]/g, '');
         });
 
-        // Handler saat tombol pendaftaran dikirim (Koneksi ke App Script / DB Anda)
+        // ADJUSMENT: Handler Utama Pengiriman Data ke Google Apps Script Web App
         document.getElementById('registrationForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Siapkan payload objek untuk dikirim ke sistem backend Google Sheets Anda
+            // 1. Ubah visual tombol menjadi state memproses (Loading)
+            const btnSubmit = this.querySelector('.btn-submit');
+            const originalText = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<span>Memproses...</span> <i class="fa-solid fa-spinner fa-spin"></i>';
+            btnSubmit.disabled = true;
+
+            // 2. Kumpulkan data masukan dari elemen HTML form
             const payload = {
                 nama: document.getElementById('namaLengkap').value,
                 email: document.getElementById('email').value,
-                peran: peranSelect.value, // Akan mengirim string murni "Guru" atau "Staf"
+                peran: peranSelect.value, 
                 dataValidasi: dataValidasiInput.value,
                 whatsapp: document.getElementById('whatsapp').value,
                 pin: pinInput.value
             };
 
-            console.log("Mengirim Data Pendaftaran:", payload);
-            alert("Pendaftaran Berhasil Dikirim! Peran Anda terdaftar sebagai: " + payload.peran);
+            // =========================================================================
+            // PENTING: Ganti string di bawah ini dengan URL Web App Google Apps Script Anda!
+            // =========================================================================
+            const WEB_APP_URL = "https://script.google.com/macros/s/PASTE_URL_WEB_APP_ANDA_DISINI/exec";
+
+            // 3. Tembak data ke Google Apps Script menggunakan Fetch API
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors", // Wajib disetel no-cors guna menghindari blokir kebijakan CORS lintas domain
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                alert("Pendaftaran Berhasil Dikirim! Data Anda telah masuk ke database.");
+                this.reset(); // Bersihkan isi formulir kembali ke awal
+                
+                // Kembalikan tampilan input Data Validasi ke default terkunci
+                dataValidasiLabel.textContent = "Data Validasi";
+                dataValidasiInput.placeholder = "Pilih peran terlebih dahulu";
+                dataValidasiInput.disabled = true;
+
+                // Kembalikan visual tombol utama
+                btnSubmit.innerHTML = originalText;
+                btnSubmit.disabled = false;
+            })
+            .catch(error => {
+                console.error("Error pendaftaran gagal:", error);
+                alert("Terjadi kendala saat mengirim data. Silakan periksa jaringan internet Anda.");
+                
+                btnSubmit.innerHTML = originalText;
+                btnSubmit.disabled = false;
+            });
         });
     </script>
 </body>
