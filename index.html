@@ -242,17 +242,52 @@
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
+        // --- ENGINE UNTUK MENDETEKSI VARIASI NAMA KOLOM TIMESTAMP / TANGGAL ---
+        function getTimestampValue(art) {
+            if (!art) return "";
+            if (art.timestamp) return art.timestamp;
+            if (art.Timestamp) return art.Timestamp;
+            
+            // Pindai otomatis jika ada variasi nama kolom dari Google Sheet
+            const keys = Object.keys(art);
+            for (let key of keys) {
+                const lowerKey = key.toLowerCase();
+                if (lowerKey === 'timestamp' || lowerKey === 'tanggal' || lowerKey === 'date' || lowerKey === 'waktu') {
+                    return art[key];
+                }
+            }
+            for (let key of keys) {
+                const lowerKey = key.toLowerCase();
+                if (lowerKey.includes('time') || lowerKey.includes('tgl') || lowerKey.includes('date') || lowerKey.includes('waktu')) {
+                    return art[key];
+                }
+            }
+            return "";
+        }
+
         // Helper Parsing Tanggal untuk Keperluan Sorting Akurat
         function parseToValidDate(timestampStr) {
             if (!timestampStr) return new Date(0);
             const str = String(timestampStr).trim();
+            if (str === "" || str === "undefined" || str === "null") return new Date(0);
+
+            if (/^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/.test(str)) {
+                const d = new Date(str);
+                if (!isNaN(d.getTime())) return d;
+            }
 
             const parts = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
             if (parts) {
-                const day = parseInt(parts[1], 10);
-                const month = parseInt(parts[2], 10) - 1;
+                let day = parseInt(parts[1], 10);
+                let month = parseInt(parts[2], 10) - 1;
                 let year = parseInt(parts[3], 10);
                 if (year < 100) year += year < 50 ? 2000 : 1900;
+                
+                if (month > 11) {
+                    const temp = day;
+                    day = month + 1;
+                    month = temp - 1;
+                }
                 return new Date(year, month, day);
             }
 
@@ -261,7 +296,7 @@
             return new Date(0);
         }
 
-        // Helper Konversi ke Format Indonesia (Tampilan)
+        // Helper Konversi ke Format Indonesia (Tampilan Detail)
         function formatIndonesianDate(timestampStr) {
             if (!timestampStr) return "";
             try {
@@ -275,18 +310,33 @@
             }
         }
 
-        // --- NEW HELPER: FORMAT TANGGAL DD/MM/YYYY UNTUK DITAMPILKAN DI CARD ---
+        // Helper Format Tanggal dd/mm/yyyy untuk Ditampilkan di Card
         function formatToDDMMYYYY(timestampStr) {
             if (!timestampStr) return "-";
             const str = String(timestampStr).trim();
+            if (str === "" || str === "undefined" || str === "null") return "-";
             
             const parts = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
             if (parts) {
-                const day = parts[1].padStart(2, '0');
-                const month = parts[2].padStart(2, '0');
-                let year = parts[3];
-                if (year.length === 2) year = "20" + year;
-                return `${day}/${month}/${year}`;
+                if (parts[1].length === 4) {
+                    const year = parts[1];
+                    const month = parts[2].padStart(2, '0');
+                    const dayMatch = str.match(/^\d{4}[\/\-]\d{1,2}[\/\-](\d{1,2})/);
+                    const day = dayMatch ? dayMatch[1].padStart(2, '0') : '01';
+                    return `${day}/${month}/${year}`;
+                } else {
+                    let day = parts[1].padStart(2, '0');
+                    let month = parts[2].padStart(2, '0');
+                    let year = parts[3];
+                    if (year.length === 2) year = "20" + year;
+                    
+                    if (parseInt(month, 10) > 12) {
+                        const temp = day;
+                        day = month;
+                        month = temp;
+                    }
+                    return `${day}/${month}/${year}`;
+                }
             }
             
             const d = new Date(timestampStr);
@@ -299,7 +349,7 @@
             return str;
         }
 
-        // --- NEW HELPER: MEMBUAT TEXT PENALARAN TANGGAL AGAR PENCARIAN BULAN SEPERTI "MEI" AKURAT ---
+        // Helper Teks Penalaran Tanggal Agar Pencarian Bulan Seperti "Mei" Akurat
         function getSearchableDateText(timestampStr) {
             if (!timestampStr) return "";
             let d = parseToValidDate(timestampStr);
@@ -335,13 +385,12 @@
             } catch (e) { console.error("Error Loading:", e); }
         }
 
-        // --- CORE FILTER ENGINE (FIX SINKRONISASI PENCARIAN BULAN & TANGGAL) --- //
+        // --- CORE FILTER ENGINE --- //
         function applyFiltersAndRender() {
             const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
             const sortOrder = document.getElementById('sort-select').value;
             currentSelectedCategory = document.getElementById('category-select').value;
 
-            // 1. Saring Peran dan Kategori
             filteredArticles = allArticles.filter(art => {
                 const peran = (art.peran || art.Peran || art.peran_saat_menulis || art.Peran_Saat_Menulis || '').toLowerCase();
                 const matchRole = (currentSelectedRole === 'Semua') || (peran === currentSelectedRole.toLowerCase());
@@ -349,13 +398,12 @@
                 return matchRole && matchCategory;
             });
 
-            // 2. Saring Pencarian Teks & Tanggal (Bulan / Tahun Terintegrasi)
             if (searchQuery !== "") {
                 filteredArticles = filteredArticles.filter(art => {
                     const judul = (art.judul || "").toLowerCase();
                     const penulis = (art.penulis || "").toLowerCase();
                     const isi = (art.isi || "").toLowerCase();
-                    const dateSearchText = getSearchableDateText(art.timestamp || art.Timestamp);
+                    const dateSearchText = getSearchableDateText(getTimestampValue(art));
 
                     return judul.includes(searchQuery) || 
                            penulis.includes(searchQuery) || 
@@ -364,10 +412,9 @@
                 });
             }
 
-            // 3. Urutkan Secara Sinkron (Terbaru / Terlama)
             filteredArticles.sort((a, b) => {
-                const timeA = parseToValidDate(a.timestamp || a.Timestamp).getTime();
-                const timeB = parseToValidDate(b.timestamp || b.Timestamp).getTime();
+                const timeA = parseToValidDate(getTimestampValue(a)).getTime();
+                const timeB = parseToValidDate(getTimestampValue(b)).getTime();
                 return sortOrder === 'terbaru' ? timeB - timeA : timeA - timeB;
             });
 
@@ -425,8 +472,8 @@
                 const detailPeran = art.detail_peran || art.Detail_Peran || '';
                 const displayPeran = peran ? `${peran}${detailPeran ? ' • ' + detailPeran : ''}` : '';
                 
-                // Ambil format dd/mm/yyyy dari timestamp
-                const tglFormatted = formatToDDMMYYYY(art.timestamp || art.Timestamp);
+                // Ambil nilai tanggal dengan sistem Smart Auto-Detect
+                const tglFormatted = formatToDDMMYYYY(getTimestampValue(art));
                 
                 let firstPhoto = "";
                 if (art.foto) {
@@ -537,7 +584,7 @@
             const peran = art.peran || art.Peran || art.peran_saat_menulis || art.Peran_Saat_Menulis || '';
             const detailPeran = art.detail_peran || art.Detail_Peran || '';
             const displayPeran = peran ? ` • ${peran}${detailPeran ? ' (' + detailPeran + ')' : ''}` : '';
-            const tgl = formatIndonesianDate(art.timestamp || art.Timestamp);
+            const tgl = formatIndonesianDate(getTimestampValue(art));
 
             document.getElementById('readStats').innerText = `${art.views || 0} VIEW • ${tgl} • ${art.kategori}${displayPeran}`;
             
