@@ -219,25 +219,25 @@
             document.getElementById('vPenulis').innerText = art.penulis;
             document.getElementById('vKategori').innerText = art.kategori;
             
-            // --- INJEKSI KODE BARU UNTUK MEMPERBAIKI LINK PROSES RELATIF ---
+            // Render isi tulisan ke dalam kontainer
             const isiContainer = document.getElementById('vIsi');
             isiContainer.innerHTML = art.isi;
-            
-            // Ambil seluruh link di dalam container deskripsi teks yang baru dirender
+
+            // --- LOGIKA PERBAIKAN LINK OTOMATIS ---
             const links = isiContainer.getElementsByTagName('a');
             for (let i = 0; i < links.length; i++) {
                 let hrefValue = links[i].getAttribute('href');
                 if (hrefValue) {
                     hrefValue = hrefValue.trim();
-                    // Jika tidak diawali http:// atau https:// maka paksa tambahkan https://
+                    // Jika link tidak diawali http:// atau https://, paksa tambahkan https://
                     if (!/^https?:\/\//i.test(hrefValue)) {
                         links[i].setAttribute('href', 'https://' + hrefValue);
                     }
-                    // Buka link otomatis di tab baru agar halaman admin tidak tertutup
+                    // Buka link di tab baru agar tidak menimpa halaman admin
                     links[i].setAttribute('target', '_blank');
                 }
             }
-            // ---------------------------------------------------------------
+            // --------------------------------------
 
             document.getElementById('vTanggal').innerText = new Date(art.tanggal).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
 
