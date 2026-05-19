@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin - Portal Literasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .navy-bg { background-color: #044A80; }
+        .navy-text { color: #044A80; }
+        .content-render img { border-radius: 12px; margin: 1rem 0; width: 100%; height: auto; }
+        #authOverlay { backdrop-filter: blur(12px); transition: all 0.5s ease; }
+        .loader { border-top-color: #044A80; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        @media (max-width: 768px) {
+            .side-panel { height: 350px !important; }
+            .main-content-area { height: auto !important; min-height: 500px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="authOverlay" class="fixed inset-0 z-[100] bg-slate-900/95 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
+            <div class="navy-bg w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 text-white text-3xl shadow-lg">🔒</div>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">Akses Terbatas</h2>
+            <p class="text-slate-500 text-sm mb-8">Halaman ini hanya untuk Redaksi Portal Literasi.</p>
+            <input type="password" id="adminPassInput" class="w-full border-2 border-slate-100 rounded-2xl px-5 py-4 mb-4 focus:outline-none focus:border-blue-500 transition-all text-center font-bold tracking-widest" placeholder="••••••••">
+            <button onclick="verifyAccess()" class="w-full navy-bg text-white font-extrabold py-4 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-blue-900/20 shadow-xl">Masuk Sekarang</button>
+        </div>
+    </div>
+
+    <div id="mainDashboard" class="hidden opacity-0 transition-opacity duration-700 p-4 md:p-8">
+        <div class="max-w-7xl mx-auto">
+            
+            <div class="bg-white p-5 md:p-6 rounded-[2.5rem] shadow-sm border border-slate-200 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="navy-bg p-4 rounded-2xl text-white shadow-lg shadow-blue-900/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-black text-slate-800 tracking-tight">Ruang <span class="navy-text">Redaksi</span></h1>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">Live Control Center</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex bg-slate-100 p-1.5 rounded-2xl w-full md:w-auto">
+                    <button onclick="switchTab('naskah')" id="btnTabNaskah" class="flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold transition-all bg-white shadow-sm navy-text">Antrean Naskah</button>
+                    <button onclick="switchTab('penulis')" id="btnTabPenulis" class="flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold transition-all text-slate-500">Kelola Penulis</button>
+                </div>
+
+                <button onclick="refreshAll()" class="w-full md:w-auto bg-slate-800 text-white font-bold px-6 py-3 rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 text-sm">
+                    <span id="syncIcon">🔄</span> Sinkronisasi
+                </button>
+            </div>
+
+            <div id="sectionNaskah" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-4 bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm side-panel h-[750px] flex flex-col">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="font-black text-slate-700 uppercase text-xs tracking-widest">Naskah Pending</h2>
+                        <span id="badgeNaskah" class="bg-orange-500 text-white text-[10px] px-3 py-1 rounded-full font-bold">0</span>
+                    </div>
+                    <div id="articleList" class="space-y-4 overflow-y-auto pr-2 custom-scroll flex-1">
+                        </div>
+                </div>
+
+                <div class="lg:col-span-8 bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[750px] main-content-area">
+                    <div id="naskahEmpty" class="flex-1 flex flex-col items-center justify-center p-10 text-center">
+                        <div class="text-6xl mb-4 grayscale opacity-30">📖</div>
+                        <h3 class="text-xl font-bold text-slate-400">Pilih naskah untuk diperiksa</h3>
+                    </div>
+                    
+                    <div id="naskahDetail" class="hidden flex-1 overflow-y-auto p-6 md:p-12 custom-scroll">
+                        <div class="mb-10">
+                            <span id="vKategori" class="navy-bg text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest mb-6 inline-block">KATEGORI</span>
+                            <h1 id="vJudul" class="text-3xl md:text-5xl font-black text-slate-900 leading-[1.1] mb-6 tracking-tighter">Judul Naskah</h1>
+                            <div class="flex items-center gap-4 border-l-4 navy-border pl-4">
+                                <div class="text-sm">
+                                    <p class="font-bold text-slate-800" id="vPenulis">Nama Penulis</p>
+                                    <p class="text-slate-400" id="vTanggal">12 Mei 2024</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="vFotoArea" class="flex gap-4 overflow-x-auto mb-10 pb-4"></div>
+                        <div id="vYoutubeArea" class="mb-10"></div>
+                        <div id="vIsi" class="content-render text-slate-700 leading-relaxed text-lg pb-10"></div>
+                    </div>
+
+                    <div id="naskahActions" class="hidden p-6 md:p-8 bg-slate-50 border-t grid grid-cols-2 gap-4">
+                        <button onclick="prosesArtikel('PUBLISHED')" class="bg-emerald-600 text-white font-black py-5 rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20">SETUJUI</button>
+                        <button onclick="prosesArtikel('REJECTED')" class="bg-rose-500 text-white font-black py-5 rounded-2xl hover:bg-rose-600 transition-all shadow-lg shadow-rose-900/20">TOLAK</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sectionPenulis" class="hidden bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
+                <div class="p-8 border-b flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h2 class="font-black text-xl text-slate-800">Database Penulis</h2>
+                        <p class="text-slate-400 text-sm">Kelola verifikasi dan akses penulis</p>
+                    </div>
+                    <div id="loaderPenulis" class="hidden animate-spin rounded-full h-5 w-5 border-2 border-slate-200 border-t-blue-600"></div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest border-b">
+                            <tr>
+                                <th class="p-6">Informasi Penulis</th>
+                                <th class="p-6">PIN & Peran</th>
+                                <th class="p-6">Statistik</th>
+                                <th class="p-6">Status Akun</th>
+                                <th class="p-6 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="authorTableBody" class="text-sm divide-y">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxx87Qzy4VYYqnXET71EQc5cP_3ax9x4-sgLS8vEssE376fnSiOgfB91590qoBZ0kE-rA/exec";
+        const ADMIN_PASS = "admin123"; // SILAHKAN GANTI PASSWORD ANDA
+        
+        let allArticles = [];
+        let allAuthors = [];
+        let currentId = null;
+
+        // FUNGSI GET THUMBNAIL (Ditambahkan untuk memperbaiki gambar Google Drive)
+        function getThumb(url, size = "w100") {
+            if (!url || url === "" || url === "null") return null;
+            const match = url.match(/[-\w]{25,}/);
+            if (match) {
+                return `https://drive.google.com/thumbnail?id=${match[0]}&sz=${size}`;
+            }
+            return url;
+        }
+
+        // 1. KEAMANAN
+        function verifyAccess() {
+            if(document.getElementById('adminPassInput').value === ADMIN_PASS) {
+                document.getElementById('authOverlay').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('authOverlay').classList.add('hidden');
+                    document.getElementById('mainDashboard').classList.remove('hidden');
+                    document.getElementById('mainDashboard').style.opacity = '1';
+                    refreshAll();
+                }, 500);
+            } else {
+                alert("Password Salah!");
+            }
+        }
+
+        // 2. NAVIGASI TAB
+        function switchTab(tab) {
+            const btnN = document.getElementById('btnTabNaskah');
+            const btnP = document.getElementById('btnTabPenulis');
+            const secN = document.getElementById('sectionNaskah');
+            const secP = document.getElementById('sectionPenulis');
+
+            if(tab === 'naskah') {
+                btnN.className = "flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold transition-all bg-white shadow-sm navy-text";
+                btnP.className = "flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold transition-all text-slate-500";
+                secN.classList.remove('hidden');
+                secP.classList.add('hidden');
+            } else {
+                btnP.className = "flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold transition-all bg-white shadow-sm navy-text";
+                btnN.className = "flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold transition-all text-slate-500";
+                secP.classList.remove('hidden');
+                secN.classList.add('hidden');
+                loadAuthors();
+            }
+        }
+
+        // 3. FUNGSI DATA NASKAH
+        async function refreshAll() {
+            document.getElementById('syncIcon').classList.add('animate-spin');
+            try {
+                const res = await fetch(`${GAS_URL}?action=getAdminData`);
+                const json = await res.json();
+                allArticles = json.data;
+                renderArticles();
+            } catch (e) { alert("Gagal mengambil data"); }
+            document.getElementById('syncIcon').classList.remove('animate-spin');
+        }
+
+        function renderArticles() {
+            const container = document.getElementById('articleList');
+            document.getElementById('badgeNaskah').innerText = allArticles.length;
+            container.innerHTML = allArticles.map(art => `
+                <div onclick="previewNaskah('${art.id}')" class="p-5 rounded-2xl border-2 border-slate-50 bg-slate-50 hover:border-blue-400 hover:bg-white cursor-pointer transition-all group">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[9px] font-black text-blue-600 uppercase tracking-tighter">${art.kategori}</span>
+                        <span class="text-[8px] text-slate-300 font-mono">${art.id}</span>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-sm leading-tight group-hover:text-blue-700 transition-colors line-clamp-2">${art.judul}</h3>
+                    <p class="text-[10px] text-slate-400 mt-3 font-bold">✍️ ${art.penulis}</p>
+                </div>
+            `).join('');
+        }
+
+        function previewNaskah(id) {
+            const art = allArticles.find(a => a.id === id);
+            currentId = id;
+            document.getElementById('naskahEmpty').classList.add('hidden');
+            document.getElementById('naskahDetail').classList.remove('hidden');
+            document.getElementById('naskahActions').classList.remove('hidden');
+
+            document.getElementById('vJudul').innerText = art.judul;
+            document.getElementById('vPenulis').innerText = art.penulis;
+            document.getElementById('vKategori').innerText = art.kategori;
+            document.getElementById('vIsi').innerHTML = art.isi;
+            document.getElementById('vTanggal').innerText = new Date(art.tanggal).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+
+            const fArea = document.getElementById('vFotoArea');
+            // Menambahkan getThumb juga untuk foto artikel agar preview tidak pecah
+            fArea.innerHTML = art.foto ? art.foto.map(f => `<img src="${getThumb(f, 'w800')}" class="h-40 rounded-2xl shadow-md border-4 border-white object-cover">`).join('') : '';
+            
+            // --- BAGIAN LOGIKA PREVIEW VIDEO YOUTUBE BARU ---
+            const ytArea = document.getElementById('vYoutubeArea');
+            if (art.youtube && art.youtube !== "" && art.youtube !== "null") {
+                let videoId = "";
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = art.youtube.match(regExp);
+                if (match && match[2].length === 11) {
+                    videoId = match[2];
+                }
+
+                if (videoId) {
+                    ytArea.innerHTML = `
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                            <p class="text-xs font-black text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">🎥 Preview Video Penulis:</p>
+                            <div class="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg">
+                                <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                        </div>`;
+                } else {
+                    ytArea.innerHTML = `
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div>
+                                <p class="text-xs font-black text-slate-700 uppercase tracking-wider">🎥 Link Video YouTube:</p>
+                                <p class="text-xs text-slate-500 font-mono break-all mt-0.5">${art.youtube}</p>
+                            </div>
+                            <a href="${art.youtube}" target="_blank" class="w-full sm:w-auto text-center px-4 py-2.5 bg-red-600 text-white font-bold text-xs rounded-xl hover:bg-red-700 transition-all flex-shrink-0">⚙️ Buka Tab Baru</a>
+                        </div>`;
+                }
+            } else {
+                ytArea.innerHTML = ""; // Bersihkan kontainer jika naskah tidak memiliki properti video/youtube
+            }
+            // ------------------------------------------------
+
+            document.getElementById('naskahDetail').scrollTop = 0;
+        }
+
+        async function prosesArtikel(status) {
+            if(!confirm(`Yakin ingin ${status} naskah ini?`)) return;
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action: "updateStatus", id: currentId, status: status })
+            });
+            alert("Berhasil diproses!");
+            location.reload();
+        }
+
+        // 4. FUNGSI DATA PENULIS
+        async function loadAuthors() {
+            document.getElementById('loaderPenulis').classList.remove('hidden');
+            try {
+                const res = await fetch(`${GAS_URL}?action=getAuthors`);
+                const json = await res.json();
+                allAuthors = json.data;
+                renderAuthors();
+            } catch (e) { alert("Gagal ambil data penulis"); }
+            document.getElementById('loaderPenulis').classList.add('hidden');
+        }
+
+        function renderAuthors() {
+            const body = document.getElementById('authorTableBody');
+            body.innerHTML = allAuthors.map(au => {
+                // Konversi foto url
+                const fotoUrl = getThumb(au.foto, "w100");
+                const initial = au.nama ? au.nama.charAt(0).toUpperCase() : "?";
+
+                return `
+                <tr class="hover:bg-slate-50 transition-all">
+                    <td class="p-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center border border-slate-200 shadow-sm text-slate-500 font-bold flex-shrink-0">
+                                ${fotoUrl ? 
+                                    `<img src="${fotoUrl}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='${initial}'">` : 
+                                    initial
+                                }
+                            </div>
+                            <div>
+                                <p class="font-black text-slate-800 uppercase text-xs">${au.nama}</p>
+                                <p class="text-[10px] text-slate-400 font-mono">${au.email}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-6 font-mono text-xs text-blue-600 font-bold">${au.pin} <br> <span class="text-slate-300 font-normal">${au.peran}</span></td>
+                    <td class="p-6">
+                        <p class="font-bold text-xs">${au.totalKarya} Naskah</p>
+                        <p class="text-[10px] text-emerald-500">${au.poin} Poin</p>
+                    </td>
+                    <td class="p-6">
+                        <span class="px-3 py-1 rounded-full text-[9px] font-black tracking-widest ${au.status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}">${au.status}</span>
+                    </td>
+                    <td class="p-6 text-right space-x-2">
+                        <button onclick="ubahStatusPenulis('${au.pin}', 'VERIFIED')" class="text-emerald-600 font-black text-[10px] hover:underline">APPROVE</button>
+                        <button onclick="ubahStatusPenulis('${au.pin}', 'BANNED')" class="text-rose-500 font-black text-[10px] hover:underline">BAN</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        async function ubahStatusPenulis(pin, stat) {
+            if(!confirm(`Ubah status penulis ke ${stat}?`)) return;
+            await fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action: "updateAuthorStatus", pin: pin, status: stat })
+            });
+            alert("Status diperbarui!");
+            loadAuthors();
+        }
+    </script>
+</body>
+</html>
