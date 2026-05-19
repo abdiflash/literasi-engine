@@ -83,7 +83,6 @@
 
         .content-section { max-width: 1200px; margin: 0 auto; padding: 0 4%; }
         
-        /* Grid 3x3 layout */
         .grid-container { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -136,20 +135,6 @@
             text-align: center; padding: 80px 20px; color: #475569; font-weight: 700;
             font-size: 14px; letter-spacing: 1px; text-transform: uppercase; width: 100%; grid-column: 1 / -1;
         }
-
-        /* Style Pagination */
-        .pagination {
-            display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 40px;
-        }
-        .page-btn {
-            background-color: #162544; color: #94a3b8; border: 1px solid #1e2e4a;
-            width: 38px; height: 38px; border-radius: 8px; font-size: 14px; font-weight: 700;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s;
-        }
-        .page-btn.active { background-color: var(--primary-blue); color: #000; border-color: var(--primary-blue); }
-        .page-btn:hover:not(.active):not(:disabled) { background-color: #1e3354; color: #fff; }
-        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -215,12 +200,10 @@
 
         <section class="content-section">
             <div class="grid-container" id="feedGrid"></div>
-            <div class="pagination" id="paginationContainer"></div>
         </section>
     </main>
 
     <script>
-        // Database Tersinkron dengan Format Kolom Anda
         const mockDatabase = [
             {
                 id: "ART-97BD539E",
@@ -232,7 +215,7 @@
                 detailPeran: "ORTU • ABILAH HUSAIN",
                 link_foto_1: "https://drive.google.com/file/d/1HHdWi_HGMMVSdjr58rR-uorBp1-PvEk0/view?usp=drivesdk",
                 views: 29,
-                avatar: "https://i.pravatar.cc/100?img=33" // Bisa pakai link G-Drive juga!
+                avatar: "https://i.pravatar.cc/100?img=33" 
             },
             {
                 id: "ART-88XF221A",
@@ -256,7 +239,7 @@
                 detailPeran: "SISWA • KELAS X-A",
                 link_foto_1: "",
                 views: 4,
-                avatar: "" // Test avatar kosong akan diganti inisial otomatis
+                avatar: "" 
             }
         ];
 
@@ -269,27 +252,20 @@
         let currentCategory = "all";
         let currentSort = "terbaru";
         let searchQuery = "";
-        
-        // Variabel Pagination
-        let currentPage = 1;
-        const itemsPerPage = 9; // Menampilkan 9 item (3x3 grid) per halaman
-        let currentFilteredData = [];
 
         const feedGrid = document.getElementById('feedGrid');
-        const paginationContainer = document.getElementById('paginationContainer');
         const searchInput = document.getElementById('searchInput');
         const categorySelect = document.getElementById('categorySelect');
         const sortSelect = document.getElementById('sortSelect');
         const roleButtons = document.querySelectorAll('#roleFilterGroup .btn-filter');
 
         // =========================================================================
-        // PERBAIKAN FATAL: Cara baru mengambil Thumbnail Google Drive (Anti-Blokir)
+        // FUNGSI BARU: Ekstrak URL Google Drive agar anti-blokir
         // =========================================================================
         function getDriveDirectLink(driveUrl) {
             if (!driveUrl) return null;
-            
             let fileId = null;
-            // Menangkap format ID biasa (../d/ID/view) atau format parameter (..?id=ID)
+            
             const match1 = driveUrl.match(/\/d\/(.+?)\//);
             const match2 = driveUrl.match(/id=([a-zA-Z0-9_-]+)/);
 
@@ -297,22 +273,21 @@
             else if (match2 && match2[1]) fileId = match2[1];
 
             if (fileId) {
-                // Menggunakan server googleusercontent yang 100% diizinkan untuk tag <img>
                 return `https://lh3.googleusercontent.com/d/${fileId}`;
             }
             return driveUrl;
         }
 
-        // Update Display hanya merender data sesuai Halaman (Pagination)
-        function updateDisplay() {
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageData = currentFilteredData.slice(startIndex, endIndex);
-            
-            renderFeed(pageData);
-            renderPagination(currentFilteredData.length);
+        function getShortCategory(fullCategory) {
+            if(fullCategory.includes("Komik")) return "Komik";
+            if(fullCategory.includes("Fotografi")) return "Fotografi";
+            if(fullCategory.includes("Umum")) return "Artikel Umum";
+            return fullCategory;
         }
 
+        // =========================================================================
+        // RENDER FEED: Menampilkan data ke layar (Sudah menggunakan URL baru)
+        // =========================================================================
         function renderFeed(data) {
             feedGrid.innerHTML = "";
             
@@ -324,11 +299,10 @@
             data.forEach(item => {
                 const card = document.createElement('div');
                 
-                // Menerapkan GDrive parser ke Thumbnail Artikel
+                // Konversi link gambar GDrive
                 const directImageUrl = getDriveDirectLink(item.link_foto_1);
                 
-                // Menerapkan GDrive parser ke Foto Profil (jika penulis pakai foto GDrive). 
-                // Jika kosong, gunakan API UI-Avatars otomatis dari nama penulis.
+                // Konversi link avatar GDrive (Jika kosong, otomatis buat inisial)
                 let avatarUrl = getDriveDirectLink(item.avatar);
                 if (!avatarUrl || avatarUrl.trim() === "") {
                     avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.penulis)}&background=1e293b&color=38bdf8&bold=true`;
@@ -373,46 +347,9 @@
             });
         }
 
-        // Fungsi Render Pagination
-        function renderPagination(totalItems) {
-            paginationContainer.innerHTML = "";
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
-            
-            if (totalPages <= 1) return; 
-
-            // Tombol Prev
-            const prevBtn = document.createElement('button');
-            prevBtn.className = 'page-btn';
-            prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
-            prevBtn.disabled = currentPage === 1;
-            prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; updateDisplay(); } };
-            paginationContainer.appendChild(prevBtn);
-
-            // Tombol Angka Halaman
-            for (let i = 1; i <= totalPages; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
-                pageBtn.innerText = i;
-                pageBtn.onclick = () => { currentPage = i; updateDisplay(); };
-                paginationContainer.appendChild(pageBtn);
-            }
-
-            // Tombol Next
-            const nextBtn = document.createElement('button');
-            nextBtn.className = 'page-btn';
-            nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
-            nextBtn.disabled = currentPage === totalPages;
-            nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; updateDisplay(); } };
-            paginationContainer.appendChild(nextBtn);
-        }
-
-        function getShortCategory(fullCategory) {
-            if(fullCategory.includes("Komik")) return "Komik";
-            if(fullCategory.includes("Fotografi")) return "Fotografi";
-            if(fullCategory.includes("Umum")) return "Artikel Umum";
-            return fullCategory;
-        }
-
+        // =========================================================================
+        // FILTER & SORTING (Pencarian bulan/tahun dipertahankan seperti aslinya)
+        // =========================================================================
         function filterAndSortData() {
             let filtered = [...mockDatabase];
 
@@ -420,7 +357,7 @@
                 filtered = filtered.filter(item => {
                     const dbRole = item.peran.toLowerCase();
                     const reqRole = currentRole.toLowerCase();
-                    return dbRole.includes(reqRole); // Pencarian lebih dinamis (Bisa cari "Guru" saja atau "Staf" saja)
+                    return dbRole.includes(reqRole);
                 });
             }
 
@@ -428,33 +365,32 @@
                 filtered = filtered.filter(item => item.kategori === currentCategory);
             }
 
-            // Algoritma Pencarian Tanggal Diperkuat
             if (searchQuery.trim() !== "") {
                 const query = searchQuery.toLowerCase().trim();
                 
                 filtered = filtered.filter(item => {
-                    let stringTanggalLengkap = "";
-                    let stringBulanTahun = "";
+                    let matchTanggal = false;
                     
-                    const dateOnly = item.timestamp.split(' ')[0];
-                    const parts = dateOnly.split('/');
-                    
-                    if(parts.length === 3) {
-                        const month = parseInt(parts[0]);
-                        const day = parts[1];
-                        const year = parts[2];
-                        const monthName = namaBulanIndo[month - 1] || "";
+                    try {
+                        const dateOnly = item.timestamp.split(' ')[0];
+                        const parts = dateOnly.split('/');
                         
-                        stringTanggalLengkap = `${day} ${monthName} ${year}`;
-                        stringBulanTahun = `${monthName} ${year}`;
-                    }
+                        if(parts.length === 3) {
+                            const month = parseInt(parts[0]);
+                            const day = parts[1];
+                            const year = parts[2];
+                            const monthName = namaBulanIndo[month - 1] || "";
+                            
+                            const stringTanggalLengkap = `${day} ${monthName} ${year}`;
+                            const stringBulanTahun = `${monthName} ${year}`;
 
-                    const matchTanggal = stringTanggalLengkap.includes(query) || 
-                                         stringBulanTahun.includes(query) ||
-                                         item.timestamp.includes(query);
+                            matchTanggal = stringTanggalLengkap.includes(query) || stringBulanTahun.includes(query);
+                        }
+                    } catch(e) {}
 
                     return item.judul.toLowerCase().includes(query) || 
                            item.penulis.toLowerCase().includes(query) || 
+                           item.timestamp.includes(query) ||
                            matchTanggal;
                 });
             }
@@ -465,9 +401,7 @@
                 filtered.sort((a, b) => b.views - a.views);
             }
 
-            currentFilteredData = filtered;
-            currentPage = 1; 
-            updateDisplay();
+            renderFeed(filtered);
         }
 
         roleButtons.forEach(button => {
