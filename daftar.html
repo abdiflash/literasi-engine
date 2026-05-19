@@ -366,7 +366,7 @@
             this.value = this.value.replace(/[^0-9]/g, '');
         });
 
-        // ADJUSMENT: Handler Utama Pengiriman Data ke Google Apps Script Web App
+        // ADJUSMENT: Handler Utama Pengiriman Data dengan Fitur Deteksi Duplikasi
         document.getElementById('registrationForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -378,6 +378,7 @@
 
             // 2. Kumpulkan data masukan dari elemen HTML form
             const payload = {
+                action: "daftar", // Menegaskan aksi pendaftaran
                 nama: document.getElementById('namaLengkap').value,
                 email: document.getElementById('email').value,
                 peran: peranSelect.value, 
@@ -387,35 +388,42 @@
             };
 
             // =========================================================================
-            // PENTING: Ganti string di bawah ini dengan URL Web App Google Apps Script Anda!
+            // PENTING: Pastikan URL Web App Google Apps Script Anda sudah benar
             // =========================================================================
-            const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxx87Qzy4VYYqnXET71EQc5cP_3ax9x4-sgLS8vEssE376fnSiOgfB91590qoBZ0kE-rA/exec";
+            const WEB_APP_URL = "https://script.google.com/macros/s/PASTE_URL_WEB_APP_ANDA_DISINI/exec";
 
-            // 3. Tembak data ke Google Apps Script menggunakan Fetch API
+            // 3. Tembak data ke Google Apps Script tanpa 'no-cors' agar bisa membaca respon server
             fetch(WEB_APP_URL, {
                 method: "POST",
-                mode: "no-cors", // Wajib disetel no-cors guna menghindari blokir kebijakan CORS lintas domain
                 headers: {
-                    "Content-Type": "application/json"
+                    // Menggunakan text/plain untuk menghindari pemblokiran CORS Preflight oleh Google
+                    "Content-Type": "text/plain"
                 },
                 body: JSON.stringify(payload)
             })
-            .then(() => {
-                alert("Pendaftaran Berhasil Dikirim! Data Anda telah masuk ke database.");
-                this.reset(); // Bersihkan isi formulir kembali ke awal
+            .then(res => res.json()) // Mengubah hasil respon Google Script menjadi objek JSON
+            .then(data => {
+                if (data.result === "success") {
+                    // Jika sukses dan belum ada duplikasi
+                    alert("Pendaftaran Berhasil Dikirim! Data Anda telah masuk ke database.");
+                    this.reset(); // Bersihkan isi formulir kembali ke awal
+                    
+                    // Kembalikan tampilan input Data Validasi ke default terkunci
+                    dataValidasiLabel.textContent = "Data Validasi";
+                    dataValidasiInput.placeholder = "Pilih peran terlebih dahulu";
+                    dataValidasiInput.disabled = true;
+                } else {
+                    // KOTAK NOTICE: Menampilkan pesan error spesifik dari Google Script (Misal: "PIN sudah digunakan.")
+                    alert("Pendaftaran Gagal: " + data.message);
+                }
                 
-                // Kembalikan tampilan input Data Validasi ke default terkunci
-                dataValidasiLabel.textContent = "Data Validasi";
-                dataValidasiInput.placeholder = "Pilih peran terlebih dahulu";
-                dataValidasiInput.disabled = true;
-
-                // Kembalikan visual tombol utama
+                // Kembalikan visual tombol utama setelah selesai proses
                 btnSubmit.innerHTML = originalText;
                 btnSubmit.disabled = false;
             })
             .catch(error => {
                 console.error("Error pendaftaran gagal:", error);
-                alert("Terjadi kendala saat mengirim data. Silakan periksa jaringan internet Anda.");
+                alert("Terjadi kendala jaringan atau URL Web App salah. Silakan periksa kembali.");
                 
                 btnSubmit.innerHTML = originalText;
                 btnSubmit.disabled = false;
