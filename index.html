@@ -99,7 +99,7 @@
                         <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                    </div>
+                    </div >
                     <input type="text" id="searchInput" oninput="applyFiltersAndRender()" placeholder="Cari karya, penulis, atau bulan/tahun..." class="w-full bg-slate-800/50 border border-slate-700 text-white py-4 pl-14 pr-6 rounded-2xl focus:ring-2 focus:ring-[#38bdf8] outline-none transition-all shadow-lg">
                 </div>
             </div>
@@ -180,7 +180,7 @@
                         <div id="sliderContent" class="h-full w-full relative">
                             <div id="imageSlider" class="slider-container"></div>
                             <button id="prevBtn" onclick="moveSlide(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-[#38bdf8] hover:text-slate-900 text-white w-10 h-10 rounded-full z-20 transition-all font-bold text-lg">‹</button>
-                            <button id="nextBtn" onclick="moveSlide(1)" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-[#38bdf8] hover:text-slate-900 text-white w-10 h-10 rounded-full z-20 transition-all font-bold text-lg">›</button>
+                            <button id="nextBtn" onclick="moveSlide(1)" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-[#38bdf8] hover:text-[#38bdf8] text-white w-10 h-10 rounded-full z-20 transition-all font-bold text-lg">›</button>
                         </div>
                         
                         <div id="videoContent" class="w-full h-full bg-black hidden">
@@ -227,24 +227,6 @@
         let currentSelectedRole = 'Semua';
         let currentSelectedCategory = 'Semua';
 
-        // --- Helper Baru: Deteksi Pencarian Spesifik Bulan & Tahun --- //
-        function dapatkanAngkaBulan(inputTeks) {
-            const daftarBulan = {
-                januari: 1, jan: 1, februari: 2, feb: 2, maret: 3, mar: 3,
-                april: 4, apr: 4, mei: 5, juni: 6, jun: 6,
-                juli: 7, jul: 7, agustus: 8, agu: 8, ags: 8,
-                september: 9, sep: 9, oktober: 10, okt: 10,
-                november: 11, nov: 11, desember: 12, des: 12
-            };
-            return daftarBulan[inputTeks.toLowerCase().trim()] || null;
-        }
-
-        function apakahInputTahun(inputTeks) {
-            const regexTahun = /^(19|20)\d{2}$/;
-            return regexTahun.test(inputTeks.trim());
-        }
-        // ------------------------------------------------------------- //
-
         function getThumb(url, size = "w1200") {
             if (!url || url === "") return "https://via.placeholder.com/800x450/1e293b/64748b?text=Portal+Literasi";
             const match = url.match(/[-\w]{25,}/);
@@ -264,8 +246,8 @@
         function parseToValidDate(timestampStr) {
             if (!timestampStr) return new Date(0);
             const str = String(timestampStr).trim();
-            
-            // Prioritaskan parsing format DD/MM/YYYY secara manual agar tidak ditukar JS
+
+            // Saring format lokal DD/MM/YYYY terlebih dahulu agar tidak tertukar menjadi format US (MM/DD/YYYY) oleh browser
             const parts = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
             if (parts) {
                 const day = parseInt(parts[1], 10);
@@ -275,14 +257,12 @@
                 return new Date(year, month, day);
             }
 
-            // Jika bukan DD/MM/YYYY, gunakan parsing standar bawaan JavaScript
-            let d = new Date(str);
+            let d = new Date(timestampStr);
             if (!isNaN(d.getTime())) return d;
-
             return new Date(0);
         }
 
-        // Helper Pencarian Waktu (Untuk Tampilan Pembacaan Manusia)
+        // Helper Pencarian Waktu
         function formatIndonesianDate(timestampStr) {
             if (!timestampStr) return "";
             try {
@@ -336,8 +316,15 @@
 
             // 2. Saring Pencarian Teks & Tanggal (Bulan / Tahun)
             if (searchQuery !== "") {
-                const cariAngkaBulan = dapatkanAngkaBulan(searchQuery);
-                const cariTahun = apakahInputTahun(searchQuery) ? parseInt(searchQuery) : null;
+                const monthsMap = {
+                    januari: 0, jan: 0, februari: 1, feb: 1, maret: 2, mar: 2,
+                    april: 3, apr: 3, mei: 4, juni: 5, jun: 5, juli: 6, jul: 6,
+                    agustus: 7, agu: 7, ags: 7, september: 8, sep: 8,
+                    oktober: 9, okt: 9, november: 10, nov: 10, desember: 11, des: 11
+                };
+
+                const searchMonth = monthsMap[searchQuery] !== undefined ? monthsMap[searchQuery] : null;
+                const searchYear = /^\d{4}$/.test(searchQuery) ? parseInt(searchQuery, 10) : null;
 
                 filteredArticles = filteredArticles.filter(art => {
                     const tgl = formatIndonesianDate(art.timestamp || art.Timestamp).toLowerCase();
@@ -345,23 +332,19 @@
                     const penulis = (art.penulis || "").toLowerCase();
                     const isi = (art.isi || "").toLowerCase();
 
-                    // Cek Kecocokan Waktu Eksplisit
-                    let matchWaktu = false;
-                    const d = parseToValidDate(art.timestamp || art.Timestamp);
-                    if (d.getTime() > 0) {
-                        const bulanArt = d.getMonth() + 1;
-                        const tahunArt = d.getFullYear();
-                        
-                        if (cariAngkaBulan !== null && bulanArt === cariAngkaBulan) matchWaktu = true;
-                        if (cariTahun !== null && tahunArt === cariTahun) matchWaktu = true;
+                    // Validasi kecocokan pencarian nama bulan atau angka tahun dari data waktu asli
+                    let matchWaktuSpesifik = false;
+                    const dObj = parseToValidDate(art.timestamp || art.Timestamp);
+                    if (dObj.getTime() !== 0) {
+                        if (searchMonth !== null && dObj.getMonth() === searchMonth) matchWaktuSpesifik = true;
+                        if (searchYear !== null && dObj.getFullYear() === searchYear) matchWaktuSpesifik = true;
                     }
 
-                    // Tampilkan jika teks ada yang cocok ATAU pencarian bulan/tahun cocok
                     return judul.includes(searchQuery) || 
                            penulis.includes(searchQuery) || 
                            isi.includes(searchQuery) || 
                            tgl.includes(searchQuery) ||
-                           matchWaktu;
+                           matchWaktuSpesifik;
                 });
             }
 
@@ -369,15 +352,7 @@
             filteredArticles.sort((a, b) => {
                 const timeA = parseToValidDate(a.timestamp || a.Timestamp).getTime();
                 const timeB = parseToValidDate(b.timestamp || b.Timestamp).getTime();
-                
-                // Tambahan fallback jika tanggal 100% identik agar urutan stabil berdasarkan abjad judul
-                if (timeA === timeB) {
-                    const titleA = (a.judul || "").toLowerCase();
-                    const titleB = (b.judul || "").toLowerCase();
-                    return titleA.localeCompare(titleB);
-                }
-
-                return sortOrder === 'terbaru' ? (timeB - timeA) : (timeA - timeB);
+                return sortOrder === 'terbaru' ? timeB - timeA : timeA - timeB;
             });
 
             currentPage = 1;
@@ -573,141 +548,10 @@
                     }
                 }
             }
-            // -----------------------------------------------------------
-            
-            // Avatar di Halaman Baca
-            const pin = art.pin?.toString().trim();
-            const avatarContainer = document.getElementById('readAvatar');
-            const avatarUrl = authorMap[pin] ? getThumb(authorMap[pin].foto, "w100") : `https://ui-avatars.com/api/?name=${encodeURIComponent(art.penulis)}`;
-            avatarContainer.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover">`;
-
-            const kreditEl = document.getElementById('readKredit');
-            if (art.kredit && art.kredit.trim() !== "") {
-                kreditEl.innerText = "Sumber/Kredit: " + art.kredit;
-                kreditEl.classList.remove('hidden');
-            } else {
-                kreditEl.classList.add('hidden');
-            }
-
-            // Setup Media & Slider
-            setupMediaComponent(art);
-            
-            // Kirim hit view tanpa memblokir render UI
-            fetch(`${GAS_URL}?action=view&id=${art.id}`).catch(e => console.log(e));
-        }
-
-        function setupMediaComponent(art) {
-            const mediaBox = document.getElementById('mediaBox');
-            const mediaTabs = document.getElementById('mediaTabs');
-            const tabFoto = document.getElementById('tabFoto');
-            const tabVideo = document.getElementById('tabVideo');
-            const imageSlider = document.getElementById('imageSlider');
-            
-            currentSlide = 0;
-            currentYoutubeId = getYoutubeId(art.youtube || art.Youtube);
-            
-            // Cek apakah kategori merupakan Komik
-            const kat = (art.kategori || "").toLowerCase();
-            activeKategoriIsKomik = kat.includes("komik") || kat.includes("manga") || kat.includes("strip");
-
-            if (activeKategoriIsKomik) {
-                mediaBox.classList.add('comic-mode');
-            } else {
-                mediaBox.classList.remove('comic-mode');
-            }
-
-            // Parse Array Foto
-            let arrFoto = [];
-            if (art.foto) {
-                if (Array.isArray(art.foto)) arrFoto = art.foto;
-                else if (typeof art.foto === 'string') arrFoto = art.foto.split(',').map(s => s.trim()).filter(s => s !== "");
-            }
-
-            // Render Slider Images
-            if (arrFoto.length > 0) {
-                imageSlider.innerHTML = arrFoto.map(f => `
-                    <div class="slider-item-container">
-                        <img src="${getThumb(f, 'w1200')}" class="slider-item shadow-lg" onerror="this.src='https://via.placeholder.com/800x450/1e293b/64748b?text=Gagal+Memuat+Gambar'">
-                    </div>
-                `).join('');
-            } else {
-                imageSlider.innerHTML = `
-                    <div class="slider-item-container">
-                        <img src="https://via.placeholder.com/800x450/1e293b/64748b?text=Portal+Literasi" class="slider-item">
-                    </div>
-                `;
-            }
-
-            // Atur Navigasi Slider Panah (Sembunyikan jika komik memanjang atau hanya 1 foto)
-            if (arrFoto.length <= 1 || activeKategoriIsKomik) {
-                document.getElementById('prevBtn').classList.add('hidden');
-                document.getElementById('nextBtn').classList.add('hidden');
-            } else {
-                document.getElementById('prevBtn').classList.remove('hidden');
-                document.getElementById('nextBtn').classList.remove('hidden');
-            }
-
-            imageSlider.style.transform = "translateX(0%)";
-
-            // Atur visibility Tabs Kontrol Media Atas
-            if (arrFoto.length > 0 && currentYoutubeId) {
-                mediaTabs.classList.remove('hidden');
-                switchMedia('foto');
-            } else {
-                mediaTabs.classList.add('hidden');
-                if (currentYoutubeId) {
-                    switchMedia('video');
-                } else {
-                    switchMedia('foto');
-                }
-            }
-        }
-
-        function switchMedia(type) {
-            const mediaBox = document.getElementById('mediaBox');
-            const sliderContent = document.getElementById('sliderContent');
-            const videoContent = document.getElementById('videoContent');
-            const readYoutube = document.getElementById('readYoutube');
-            const tabFoto = document.getElementById('tabFoto');
-            const tabVideo = document.getElementById('tabVideo');
-
-            if (type === 'video' && currentYoutubeId) {
-                mediaBox.classList.add('video-active');
-                sliderContent.classList.add('hidden');
-                videoContent.classList.remove('hidden');
-                
-                readYoutube.innerHTML = `<iframe class="w-full h-full rounded-2xl" src="https://www.youtube.com/embed/${currentYoutubeId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-                
-                tabVideo.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-active";
-                tabFoto.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-inactive";
-            } else {
-                mediaBox.classList.remove('video-active');
-                sliderContent.classList.remove('hidden');
-                videoContent.classList.add('hidden');
-                readYoutube.innerHTML = ""; // Stop Video
-                
-                tabFoto.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-active";
-                tabVideo.className = "flex-1 py-3 px-4 rounded-2xl border text-xs tracking-wider uppercase transition-all duration-200 tab-btn-inactive";
-            }
-        }
-
-        function moveSlide(direction) {
-            if (activeKategoriIsKomik) return;
-            const slider = document.getElementById('imageSlider');
-            const totalSlides = slider.children.length;
-            currentSlide = (currentSlide + direction + totalPages) % totalSlides; // prevent out of bounds safely
-            slider.style.transform = `translateX(-${currentSlide * 100}%)`;
-        }
-
-        function backToHome() {
-            document.getElementById('readYoutube').innerHTML = ""; // Matikan iFrame Video
-            document.getElementById('readView').classList.add('hidden');
-            document.getElementById('homeView').classList.remove('hidden');
-            window.scrollTo(0, 0);
         }
 
         // Jalankan inisialisasi aplikasi saat dokumen siap
-        window.addEventListener('DOMContentLoaded', init);
+        window.onload = init;
     </script>
 </body>
 </html>
